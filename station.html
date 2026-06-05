@@ -1,0 +1,104 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>V14 — station</title><style>
+ :root { --ink:#1f2430; --muted:#7a8494; --paper:#fcfdff; --panel:#f3f6fa; }
+ body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--paper);
+        color:var(--ink); margin:0; padding:28px 16px; }
+ .wrap { max-width:980px; margin:0 auto; }
+ h1 { font-size:25px; margin:0 0 6px; }
+ .sub { color:var(--muted); font-size:13.5px; margin-bottom:16px; line-height:1.5; }
+ a { color:#2563a8; text-decoration:none; } a:hover { text-decoration:underline; }
+ .chips { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+ .chip { background:var(--panel); border-radius:10px; padding:9px 13px; font-size:13px; }
+ .chip b { font-size:16.5px; }
+ table { border-collapse:collapse; width:100%; }
+ th { font-size:12px; color:var(--muted); text-align:center; padding:6px 4px;
+      border-bottom:2px solid #e2e8f0; line-height:1.35; }
+ th small { font-weight:normal; display:block; margin-top:2px; }
+ td { text-align:center; padding:9px 4px; border-bottom:1px solid #edf1f6; font-size:14px; }
+ td.date { font-weight:700; white-space:nowrap; }
+ td.na { color:#c3cad6; }
+ td.wait { color:var(--muted); font-style:italic; font-size:12.5px; }
+ td.typhoon { color:#d64545; font-weight:700; font-size:12.5px; }
+ tr td:last-child { font-size:12.5px; color:var(--muted); }
+ .val { display:inline-block; min-width:44px; padding:6px 10px; border-radius:9px;
+        color:#fff; font-weight:700; font-size:15.5px; }
+ .n { display:block; color:var(--muted); font-size:10.5px; margin-top:3px; }
+ .legend { display:flex; gap:13px; align-items:center; margin:13px 0 6px;
+           font-size:12px; color:var(--muted); flex-wrap:wrap; }
+ .sw { display:inline-block; width:13px; height:13px; border-radius:4px;
+       vertical-align:-2px; margin-right:4px; }
+ .how { background:#eef4f0; border-radius:12px; padding:13px 17px; font-size:13px;
+        line-height:1.55; margin-top:16px; }
+ footer { color:var(--muted); font-size:11.5px; margin-top:20px; line-height:1.5; }
+ .cols { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+ .side { flex:1; min-width:250px; }
+ .side h3 { font-size:14px; margin:12px 0 5px; }
+ .side table td { padding:5px 6px; font-size:13px; }
+ .side td:first-child { text-align:left; }
+ .upc { background:#eef4fb; border:1px solid #d7e4f2; border-radius:10px;
+        padding:8px 13px; font-size:13px; margin-bottom:14px; }
+ .maphead { display:flex; align-items:center; gap:12px; margin:28px 0 2px; }
+ .maphead h2 { font-size:20px; margin:0; }
+ .nav { border:1px solid #cfd9e4; background:white; color:#2563a8; border-radius:9px;
+        font-size:17px; width:38px; height:34px; cursor:pointer; }
+ .nav:disabled { color:#c3cad6; cursor:default; }
+ .tgl { width:auto; padding:0 14px; font-size:13.5px; font-weight:700; color:#7a8494; }
+ .tgl.on { background:#1f2430; border-color:#1f2430; color:white; }
+ .tgl:disabled { color:#c3cad6; background:#f3f6fa; }
+ .tglrow { display:flex; gap:8px; margin:2px 0 12px; }
+ .back { font-size:13px; display:inline-block; margin-bottom:10px; }
+
+ #chart-box { max-width:900px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head><body><div class="wrap">
+<a class="back" id="back" href="index.html">&larr; back</a>
+<h1 id="ttl">…</h1>
+<div class="sub" id="sub"></div>
+<div id="chart-box"><canvas id="ch" height="120"></canvas></div>
+<div class="how"><b>How to read.</b> The green line is the V14 forecast issued
+ <i>before the day began</i> (time in the header, git-committed); the shaded band is its P10–P90
+ uncertainty interval (80% of reality should fall inside); the black line is what physical JMA
+ pyranometers actually measured; the dashed blue line is the official JMA MSM forecast —
+ the standard reference in the Japanese market.</div>
+<footer>v14 weather track · truth = JMA pyranometers · forecast log is git-committed before the event</footer>
+</div>
+<script>
+const q = new URLSearchParams(location.search);
+const st = q.get('s'), d = q.get('d');
+document.getElementById('back').href = 'index.html?d=' + d + '#map';
+fetch('data/curves/' + d + '/' + st + '.json').then(r => {
+  if (!r.ok) throw 0; return r.json();
+}).then(j => {
+  document.getElementById('ttl').textContent = st + ' — ' + d;
+  const hasTruth = j.truth.some(v => v !== null);
+  document.getElementById('sub').innerHTML =
+    'forecast issued <b>' + j.issued + '</b>' +
+    (j.committed_before_day ? ' (before the day began)' : ' <b>(warm-up run)</b>') +
+    ' · hours are JST' + (hasTruth ? '' : ' · <b>truth not published yet — forecast on record</b>');
+  const ds = [
+    {label: 'P10', data: j.p10, borderWidth: 0, pointRadius: 0, fill: '+1',
+     backgroundColor: 'rgba(47,158,68,0.10)'},
+    {label: 'P90', data: j.p90, borderWidth: 0, pointRadius: 0, fill: false},
+    {label: 'V14 forecast', data: j.v14, borderColor: '#2f9e44', borderWidth: 2.6,
+     pointRadius: 2.5, pointBackgroundColor: '#2f9e44', tension: .35},
+    {label: 'Reality (pyranometer)', data: j.truth, borderColor: '#1f2430', borderWidth: 2.6,
+     pointRadius: 2.5, pointBackgroundColor: '#1f2430', tension: .35},
+    {label: 'JMA MSM (official)', data: j.jma, borderColor: '#4878b8', borderWidth: 1.8,
+     borderDash: [6, 4], pointRadius: 0, tension: .35}];
+  new Chart(document.getElementById('ch'), {
+    type: 'line',
+    data: {labels: j.hours, datasets: ds},
+    options: {
+      animation: false, maintainAspectRatio: true, aspectRatio: 1.9,
+      interaction: {mode: 'index', intersect: false},
+      plugins: {legend: {labels: {filter: i => !['P10', 'P90'].includes(i.text)}}},
+      scales: {y: {title: {display: true, text: 'W/m²'}, beginAtZero: true},
+               x: {ticks: {maxTicksLimit: 9}}}
+    }});
+}).catch(() => {
+  document.getElementById('ttl').textContent = 'No data for ' + st + ' / ' + d;
+});
+</script></body></html>
