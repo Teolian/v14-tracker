@@ -47,7 +47,15 @@
  .tgl:disabled { color:#c3cad6; background:#f3f6fa; }
  .tglrow { display:flex; gap:8px; margin:2px 0 12px; }
 
- #chart-box { max-width:900px; }
+ #duo { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+ #chart-box { flex:1 1 540px; max-width:900px; min-width:320px; }
+ #htbl table { border-collapse:collapse; }
+ #htbl th { font-size:11.5px; color:var(--muted); font-weight:600; padding:3px 7px; }
+ #htbl td { padding:3px 7px; text-align:center; font-size:13px; }
+ #htbl .dv { display:inline-block; min-width:40px; padding:3px 7px; border-radius:8px;
+             font-weight:700; font-size:12.5px; }
+ #htbl .win { box-shadow:0 0 0 2px #1f2430; }
+ #htbl tfoot td { border-top:2px solid #d7dee6; font-weight:700; padding-top:6px; }
  .back { font-size:13px; display:inline-block; margin-bottom:10px; }
 </style>
 <script src="chart.umd.min.js"></script>
@@ -55,7 +63,7 @@
 <a class="back" id="back" href="index.html">&larr; back</a>
 <h1 id="ttl">…</h1>
 <div class="sub" id="sub"></div>
-<div id="chart-box"><canvas id="ch" height="120"></canvas></div>
+<div id="duo"><div id="chart-box"><canvas id="ch" height="120"></canvas></div><div id="htbl"></div></div>
 <div class="how"><b>How to read.</b> The green line is the V14 forecast issued
  <i>before the day began</i> (time in the header, git-committed); the shaded band is its P10–P90
  uncertainty interval (80% of reality should fall inside); the black line is what physical JMA
@@ -96,6 +104,44 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
       scales: {y: {title: {display: true, text: 'W/m²'}, beginAtZero: true},
                x: {ticks: {maxTicksLimit: 9}}}
     }});
+  // почасовая таблица: факт / V14 / дельты / JMA (вариант 1)
+  const ESTOPS = [[30,'#1a9850'],[75,'#66bd63'],[110,'#d9ef8b'],[140,'#fee08b'],[180,'#f46d43'],[250,'#d73027']];
+  const hx = c => c.slice(1).match(/../g).map(x => parseInt(x, 16));
+  const mixc = (a, b, t) => { const A = hx(a), B = hx(b);
+    return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+  const colErr = v => { if (v <= ESTOPS[0][0]) return ESTOPS[0][1];
+    for (let i = 1; i < ESTOPS.length; i++) if (v <= ESTOPS[i][0])
+      return mixc(ESTOPS[i-1][1], ESTOPS[i][1], (v - ESTOPS[i-1][0]) / (ESTOPS[i][0] - ESTOPS[i-1][0]));
+    return ESTOPS[ESTOPS.length - 1][1]; };
+  const tcol = c => { const [r, g, b] = hx(c); return (r*299 + g*587 + b*114) / 1000 > 150 ? '#1f2430' : '#fff'; };
+  const pill = (d, win) => { if (d === null) return '<td>—</td>';
+    const bg = colErr(Math.abs(d));
+    return '<td><span class="dv' + (win ? ' win' : '') + '" style="background:' + bg +
+           ';color:' + tcol(bg) + '">' + (d > 0 ? '+' : '') + Math.round(d) + '</span></td>'; };
+  let rows = '', sv = 0, sj = 0, n = 0, wv = 0;
+  for (let i = 0; i < j.hours.length; i++) {
+    const t = j.truth[i], v = j.v14[i], m = j.jma[i];
+    const dv = (t !== null && v !== null) ? v - t : null;
+    const dj = (t !== null && m !== null) ? m - t : null;
+    let winv = false, winj = false;
+    if (dv !== null && dj !== null) {
+      if (Math.abs(dv) <= Math.abs(dj)) { winv = true; wv++; } else winj = true;
+      sv += Math.abs(dv); sj += Math.abs(dj); n++;
+    }
+    rows += '<tr><td>' + j.hours[i] + '</td><td>' + (t === null ? '—' : Math.round(t)) +
+            '</td><td>' + (v === null ? '—' : Math.round(v)) + '</td>' + pill(dv, winv) +
+            '<td>' + (m === null ? '—' : Math.round(m)) + '</td>' + pill(dj, winj) + '</tr>';
+  }
+  let foot = '';
+  if (n) foot = '<tfoot><tr><td colspan="2">MAE</td><td></td>' + pill(sv / n, sv <= sj) +
+                '<td></td>' + pill(sj / n, sj < sv) + '</tr></tfoot>';
+  document.getElementById('htbl').innerHTML =
+    '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>&Delta; V14</th>' +
+    '<th>JMA MSM</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' +
+    (n ? '<div class="n" style="margin-top:6px;max-width:330px">&Delta; = forecast &minus; measured ' +
+         '(+ over, &minus; under) &middot; ring = closer to reality &middot; V14 closer in <b>' +
+         wv + '</b> of ' + n + ' h</div>'
+       : '<div class="n" style="margin-top:6px">&Delta; appears when measurements arrive</div>');
 }).catch(() => {
   document.getElementById('ttl').textContent = 'No data for ' + st + ' / ' + d;
 });
