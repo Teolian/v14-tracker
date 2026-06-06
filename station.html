@@ -129,15 +129,16 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
       sv += Math.abs(dv); sj += Math.abs(dj); n++;
     }
     rows += '<tr><td>' + j.hours[i] + '</td><td>' + (t === null ? '—' : Math.round(t)) +
-            '</td><td>' + (v === null ? '—' : Math.round(v)) + '</td>' + pill(dv, winv) +
-            '<td>' + (m === null ? '—' : Math.round(m)) + '</td>' + pill(dj, winj) + '</tr>';
+            '</td><td>' + (v === null ? '—' : Math.round(v)) +
+            '</td><td>' + (m === null ? '—' : Math.round(m)) + '</td>' +
+            pill(dv, winv) + pill(dj, winj) + '</tr>';
   }
   let foot = '';
-  if (n) foot = '<tfoot><tr><td colspan="2">MAE</td><td></td>' + pill(sv / n, sv <= sj) +
-                '<td></td>' + pill(sj / n, sj < sv) + '</tr></tfoot>';
+  if (n) foot = '<tfoot><tr><td colspan="4" style="text-align:right">MAE</td>' +
+                pill(sv / n, sv <= sj) + pill(sj / n, sj < sv) + '</tr></tfoot>';
   document.getElementById('htbl').innerHTML =
-    '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>&Delta; V14</th>' +
-    '<th>JMA MSM</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' +
+    '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>JMA MSM</th>' +
+    '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' +
     (n ? '<div class="n" style="margin-top:6px;max-width:330px">&Delta; = forecast &minus; measured ' +
          '(+ over, &minus; under) &middot; ring = closer to reality &middot; V14 closer in <b>' +
          wv + '</b> of ' + n + ' h</div>'
