@@ -54,11 +54,13 @@
  <b>before</b> the weather happens (git timestamps) and checked against physical JMA pyranometers
  — <b>41 stations across all of Japan</b>, Hokkaido to Kyushu. Cell = average miss that day
  (RMSE, W/m², lower is better), identical hours and stations for every model ·
- click a date to see that day on the map · updated 2026-06-07 10:33 JST</div>
+ click a date to see that day on the map · updated 2026-06-07 10:47 JST</div>
 <div class="chips">
  <div class="chip">won <b>5/5</b> days vs every official forecast</div>
  <div class="chip">all days: V14 <b>144</b> vs best official 189</div>
  <div class="chip">P10–P90 coverage <b>0.74</b> / 0.80 nominal</div>
+ <div class="chip">skill vs smart persistence <b>0.47</b></div>
+ <div class="chip">nRMSE <b>46%</b> of daytime mean</div>
  <div class="chip"><b>41</b> stations · all Japan</div>
 </div>
 <div class="status">&#128336; <b id="jstclock">--:--</b> JST now &middot; today&rsquo;s forecast issued <b>2026-06-07 00:00 JST</b> (5&ndash;20&thinsp;h ahead of each daylight hour) &middot; sensors verified through <b>2026-06-06</b> (JMA publishes after midnight JST) &middot; page auto-updates ~00:50 JST</div><script>const _jc=()=>{document.getElementById("jstclock").textContent=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit"}).format(new Date())};_jc();setInterval(_jc,30000);</script>
@@ -232,7 +234,7 @@ document.querySelectorAll('a.dsel').forEach(a => a.addEventListener('click', e =
 render();
 document.querySelectorAll('.dsel').forEach(a=>{const dd=DAYS[a.dataset.d];if(dd&&dd.issued)a.title='forecast issued '+dd.issued;});</script>
 <div class="how"><b>How to read.</b> All models are scored on <i>identical rows</i>: same hour,
- same station, day-ahead horizon (12–36h), daylight only. <b>JMA MSM</b> is the operational
+ same station, day-ahead horizon (12–36h), daylight only. <i>Skill</i> = improvement over the naive &laquo;same clear-sky index as yesterday&raquo; forecast (0 = no better, 1 = perfect); <i>MAE</i> on station pages = average hourly miss. <b>JMA MSM</b> is the operational
  5-km model of the Japan Meteorological Agency — the standard reference in the Japanese market;
  <b>ECMWF IFS</b> and <b>NOAA GFS</b> are the leading global models. The best official model
  changes from day to day — V14 has beaten whichever it was. On the map, click any station for

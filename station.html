@@ -119,7 +119,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     const bg = colErr(Math.abs(d));
     return '<td><span class="dv' + (win ? ' win' : '') + '" style="background:' + bg +
            ';color:' + tcol(bg) + '">' + (d > 0 ? '+' : '') + Math.round(d) + '</span></td>'; };
-  let rows = '', sv = 0, sj = 0, n = 0, wv = 0;
+  let rows = '', sv = 0, sj = 0, sv2 = 0, sj2 = 0, n = 0, wv = 0;
   for (let i = 0; i < j.hours.length; i++) {
     const t = j.truth[i], v = j.v14[i], m = j.jma[i];
     const dv = (t !== null && v !== null) ? v - t : null;
@@ -127,7 +127,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     let winv = false, winj = false;
     if (dv !== null && dj !== null) {
       if (Math.abs(dv) <= Math.abs(dj)) { winv = true; wv++; } else winj = true;
-      sv += Math.abs(dv); sj += Math.abs(dj); n++;
+      sv += Math.abs(dv); sj += Math.abs(dj); sv2 += dv*dv; sj2 += dj*dj; n++;
     }
     rows += '<tr><td>' + j.hours[i] + '</td><td>' + (t === null ? '—' : Math.round(t)) +
             '</td><td>' + (v === null ? '—' : Math.round(v)) +
@@ -136,7 +136,9 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
   }
   let foot = '';
   if (n) foot = '<tfoot><tr><td colspan="4" style="text-align:right">MAE</td>' +
-                pill(sv / n, sv <= sj) + pill(sj / n, sj < sv) + '</tr></tfoot>';
+                pill(sv / n, sv <= sj) + pill(sj / n, sj < sv) + '</tr>' +
+                '<tr><td colspan="4" style="text-align:right">RMSE</td>' +
+                pill(Math.sqrt(sv2 / n), sv2 <= sj2) + pill(Math.sqrt(sj2 / n), sj2 < sv2) + '</tr></tfoot>';
   document.getElementById('htbl').innerHTML =
     '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>JMA MSM</th>' +
     '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' +
