@@ -1,0 +1,115 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>V14 — methodology</title><style>
+ :root { --ink:#1f2430; --muted:#7a8494; --paper:#fcfdff; --panel:#f3f6fa; }
+ body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--paper);
+        color:var(--ink); margin:0; padding:28px 16px; }
+ .wrap { max-width:980px; margin:0 auto; }
+ h1 { font-size:25px; margin:0 0 6px; }
+ .sub { color:var(--muted); font-size:13.5px; margin-bottom:16px; line-height:1.5; }
+ a { color:#2563a8; text-decoration:none; } a:hover { text-decoration:underline; }
+ .status { background:#eef4f0; border-radius:10px; padding:8px 14px; font-size:12.5px; color:#3c4654; margin-bottom:14px; }
+ .chips { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+ .chip { background:var(--panel); border-radius:10px; padding:9px 13px; font-size:13px; }
+ .chip b { font-size:16.5px; }
+ table { border-collapse:collapse; width:100%; }
+ th { font-size:12px; color:var(--muted); text-align:center; padding:6px 4px;
+      border-bottom:2px solid #e2e8f0; line-height:1.35; }
+ th small { font-weight:normal; display:block; margin-top:2px; }
+ td { text-align:center; padding:9px 4px; border-bottom:1px solid #edf1f6; font-size:14px; }
+ td.date { font-weight:700; white-space:nowrap; }
+ td.typhoon { color:#d64545; font-weight:700; font-size:12.5px; }
+ tr td:last-child { font-size:12.5px; color:var(--muted); }
+ .val { display:inline-block; min-width:44px; padding:6px 10px; border-radius:9px;
+        color:#fff; font-weight:700; font-size:15.5px; }
+ .n { display:block; color:var(--muted); font-size:10.5px; margin-top:3px; }
+ .legend { display:flex; gap:13px; align-items:center; margin:13px 0 6px;
+           font-size:12px; color:var(--muted); flex-wrap:wrap; }
+ .sw { display:inline-block; width:13px; height:13px; border-radius:4px;
+       vertical-align:-2px; margin-right:4px; }
+ .how { background:#eef4f0; border-radius:12px; padding:13px 17px; font-size:13px;
+        line-height:1.55; margin-top:16px; }
+ footer { color:var(--muted); font-size:11.5px; margin-top:20px; line-height:1.5; }
+ .cols { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+ .side { flex:1; min-width:250px; }
+ .side h3 { font-size:14px; margin:12px 0 5px; }
+ .side table td { padding:5px 6px; font-size:13px; }
+ .side td:first-child { text-align:left; }
+ .upc { background:#eef4fb; border:1px solid #d7e4f2; border-radius:10px;
+        padding:8px 13px; font-size:13px; margin-bottom:14px; }
+ .maphead { display:flex; align-items:center; gap:12px; margin:28px 0 2px; }
+ .maphead h2 { font-size:20px; margin:0; }
+ .nav { border:1px solid #cfd9e4; background:white; color:#2563a8; border-radius:9px;
+        font-size:17px; width:38px; height:34px; cursor:pointer; }
+ .nav:disabled { color:#c3cad6; cursor:default; }
+ .tgl { width:auto; padding:0 14px; font-size:13.5px; font-weight:700; color:#7a8494; }
+ .tgl.on { background:#1f2430; border-color:#1f2430; color:white; }
+ .tgl:disabled { color:#c3cad6; background:#f3f6fa; }
+ .tglrow { display:flex; gap:8px; margin:2px 0 12px; }
+
+ .m h2 { margin-top:26px; } .m p, .m li { font-size:14px; line-height:1.6; }
+ .m code { background:#eef1f5; padding:1px 5px; border-radius:5px; }
+</style></head><body><div class="wrap m">
+<a class="back" href="index.html">&larr; back to live tracker</a>
+<h1>Methodology</h1>
+<p>This page documents how the numbers on the <a href="index.html">live tracker</a> are produced.
+The tracker is a forward test: forecasts are committed to git <b>before the weather happens</b>
+and verified against physical sensors once observations are published. Nothing on the tracker
+is backfitted, re-run, or selected after the fact.</p>
+
+<h2>1. What is being forecast</h2>
+<p>Surface solar irradiance (GHI, W/m&sup2;) at <b>41 JMA pyranometer sites</b> across Japan,
+hourly, for the next day. Ground truth = the official JMA pyranometer archive, published after
+each day closes (~00:30 JST). Only daylight hours are scored (clear-sky irradiance &gt; 10 W/m&sup2;).</p>
+
+<h2>2. Issue times and lead windows</h2>
+<p>Every forecast value has three timestamps: model <i>init</i> time, our <i>issue</i> time, and
+the <i>valid</i> hour being forecast. Lead = valid &minus; issue. The tracker runs several daily
+issue slots; each comparison lives strictly inside one slot:</p>
+<ul>
+<li><b>Day view (main table):</b> forecast issued the previous evening (last run before 00:00 JST),
+ leads &asymp; 8&ndash;23 h to daylight hours.</li>
+<li><b>Vendors comparison:</b> pooled rows filtered to leads <b>12&ndash;36 h</b> &mdash; the
+ conventional &laquo;day-ahead&raquo; band used in the solar-forecasting literature, kept for
+ comparability with published results.</li>
+<li><b>Contract slot (accumulating):</b> issued 05:25 JST the day before delivery,
+ leads &asymp; 23&ndash;38 h &mdash; matches a real Japanese submission deadline.</li>
+</ul>
+
+<h2>3. Identical rows</h2>
+<p>All models in any table are scored on <b>exactly the same rows</b>: same station, same hour,
+same issue slot, truth present for all. The <code>n</code> shown in each row is the size of that
+common set. We never compare our forecast from one slot with a competitor from another.</p>
+
+<h2>4. Reference models</h2>
+<p><b>JMA MSM</b> (5-km operational mesoscale model; we verified that our feed equals the raw
+government model output with correlation 0.989, median difference 0.4 W/m&sup2;),
+<b>ECMWF IFS</b> (0.25&deg;), <b>NOAA GFS</b> (0.25&deg;), and <b>smart persistence</b> &mdash;
+&laquo;tomorrow keeps today&rsquo;s clear-sky index&raquo;, the standard no-skill baseline of the field.</p>
+
+<h2>5. Metrics</h2>
+<ul>
+<li><b>RMSE</b> &mdash; root-mean-square error; penalises large misses, which carry
+ disproportionate cost in power markets. Used for day cells and the map.</li>
+<li><b>MAE</b> &mdash; mean absolute error; the typical hourly miss. Shown on station pages.</li>
+<li><b>nRMSE</b> &mdash; RMSE divided by the mean measured daytime irradiance of the same rows;
+ makes results comparable across climates and seasons.</li>
+<li><b>Skill</b> = 1 &minus; RMSE<sub>model</sub>/RMSE<sub>persistence</sub> on identical rows;
+ 0 = no better than naive, 1 = perfect. Day-ahead skill of 0.3&ndash;0.4 is considered strong
+ in the literature.</li>
+<li><b>P10&ndash;P90 coverage (PICP)</b> &mdash; how often reality falls inside our published
+ 80% uncertainty band; the honesty of the band, target 0.80.</li>
+</ul>
+<p>Published daytime RMSE for the raw operational mesoscale model over Japan ranges roughly
+95&ndash;170 W/m&sup2; across regions and seasons (Solar Energy 2012&ndash;2015; Energy Procedia 2014)
+&mdash; the colour scale of the tracker is anchored to that literature.</p>
+
+<h2>6. Provenance &amp; reproducibility</h2>
+<p>Each forecast run is appended to a log and committed to git minutes after issuance &mdash; the
+commit timestamp precedes the forecast validity period. The site is rebuilt automatically once a
+day after JMA publishes observations; no manual step touches the numbers. Sample sizes are shown
+everywhere; early-period results (first weeks) should be read with their <code>n</code> in mind.</p>
+<footer>v14 weather track &middot; methodology page &middot; numbers on the tracker are generated
+from the same logs described here</footer>
+</div></body></html>
