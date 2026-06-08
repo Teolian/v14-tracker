@@ -174,13 +174,33 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
       '<th>&Delta; V15</th><th>&Delta; JMA</th></tr></thead><tbody>' + r2 + '</tbody>' + f2 + '</table>' +
       (n5 ? '<div class="n" style="margin-top:4px">V15 closer in <b>' + w5 + '</b> of ' + n5 + ' h</div>' : '');
   }
-  document.getElementById('htbl').innerHTML =
-    '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>JMA MSM</th>' +
-    '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' + v15tbl +
-    (n ? '<div class="n" style="margin-top:6px;max-width:330px">&Delta; = forecast &minus; measured ' +
+  const v14note = (n ? '<div class="n" style="margin-top:6px;max-width:330px">&Delta; = forecast &minus; measured ' +
          '(+ over, &minus; under) &middot; ring = closer to reality &middot; V14 closer in <b>' +
          wv + '</b> of ' + n + ' h</div>'
        : '<div class="n" style="margin-top:6px">&Delta; appears when measurements arrive</div>');
+  const t14html = '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>JMA MSM</th>' +
+    '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' + v14note;
+  const hasV15 = v15tbl !== '';
+  const sel0 = (q.get('m') === 'v15' && hasV15) ? 'v15' : 'v14';
+  const toggle = hasV15 ? ('<div style="display:flex;gap:6px;margin-bottom:8px">' +
+    '<button id="sm14" style="padding:4px 13px;border:0;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600">V14</button>' +
+    '<button id="sm15" style="padding:4px 13px;border:0;border-radius:7px;cursor:pointer;font-size:12px">V15</button></div>') : '';
+  document.getElementById('htbl').innerHTML = toggle +
+    '<div id="t14">' + t14html + '</div><div id="t15">' + v15tbl + '</div>';
+  window.setSM = function(m) {
+    document.getElementById('t14').style.display = m === 'v14' ? '' : 'none';
+    document.getElementById('t15').style.display = m === 'v15' ? '' : 'none';
+    if (hasV15) {
+      const b14 = document.getElementById('sm14'), b15 = document.getElementById('sm15');
+      b14.style.background = m === 'v14' ? '#1f2430' : '#eef0f3'; b14.style.color = m === 'v14' ? '#fff' : '#1f2430';
+      b15.style.background = m === 'v15' ? '#9b59b6' : '#eef0f3'; b15.style.color = m === 'v15' ? '#fff' : '#9b59b6';
+    }
+  };
+  if (hasV15) {
+    document.getElementById('sm14').onclick = function() { setSM('v14'); };
+    document.getElementById('sm15').onclick = function() { setSM('v15'); };
+  }
+  setSM(sel0);
 }).catch(() => {
   document.getElementById('ttl').textContent = 'No data for ' + st + ' / ' + d;
 });
