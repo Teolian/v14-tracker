@@ -93,15 +93,23 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
      pointRadius: 2.5, pointBackgroundColor: '#2f9e44', tension: .35},
     {label: 'Reality (pyranometer)', data: j.truth, borderColor: '#1f2430', borderWidth: 2.6,
      pointRadius: 2.5, pointBackgroundColor: '#1f2430', tension: .35},
-    {label: 'JMA MSM (official)', data: j.jma, borderColor: '#4878b8', borderWidth: 1.8,
+    {label: 'JMA MSM (raw)', data: j.jma, borderColor: '#4878b8', borderWidth: 1.8,
      borderDash: [6, 4], pointRadius: 0, tension: .35}];
+  if (j.v15 && j.v15.some(v => v !== null)) {
+    ds.unshift(
+      {label: 'V15 P10', data: j.v15_p10, borderWidth: 0, pointRadius: 0, fill: '+1',
+       backgroundColor: 'rgba(155,89,182,0.12)'},
+      {label: 'V15 P90', data: j.v15_p90, borderWidth: 0, pointRadius: 0, fill: false});
+    ds.push({label: 'V15 (contract slot)', data: j.v15, borderColor: '#9b59b6', borderWidth: 2.2,
+             pointRadius: 2, pointBackgroundColor: '#9b59b6', tension: .35});
+  }
   new Chart(document.getElementById('ch'), {
     type: 'line',
     data: {labels: j.hours, datasets: ds},
     options: {
       animation: false, maintainAspectRatio: true, aspectRatio: 1.9,
       interaction: {mode: 'index', intersect: false},
-      plugins: {legend: {labels: {filter: i => !['P10', 'P90'].includes(i.text)}}},
+      plugins: {legend: {labels: {filter: i => !['P10', 'P90', 'V15 P10', 'V15 P90'].includes(i.text)}}},
       scales: {y: {title: {display: true, text: 'W/m²'}, beginAtZero: true},
                x: {ticks: {maxTicksLimit: 9}}}
     }});
@@ -139,9 +147,36 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
                 pill(sv / n, sv <= sj) + pill(sj / n, sj < sv) + '</tr>' +
                 '<tr><td colspan="4" style="text-align:right">RMSE</td>' +
                 pill(Math.sqrt(sv2 / n), sv2 <= sj2) + pill(Math.sqrt(sj2 / n), sj2 < sv2) + '</tr></tfoot>';
+  let v15tbl = '';
+  if (j.v15 && j.v15.some(v => v !== null)) {
+    let r2 = '', s5 = 0, sj5 = 0, s52 = 0, sj52 = 0, n5 = 0, w5 = 0;
+    for (let i = 0; i < j.hours.length; i++) {
+      const t = j.truth[i], v = j.v15[i], m = j.jma[i];
+      const dv = (t !== null && v !== null) ? v - t : null;
+      const dj = (t !== null && m !== null) ? m - t : null;
+      let winv = false, winj = false;
+      if (dv !== null && dj !== null) {
+        if (Math.abs(dv) <= Math.abs(dj)) { winv = true; w5++; } else winj = true;
+        s5 += Math.abs(dv); sj5 += Math.abs(dj); s52 += dv*dv; sj52 += dj*dj; n5++;
+      }
+      r2 += '<tr><td>' + j.hours[i] + '</td><td>' + (t === null ? '—' : Math.round(t)) +
+            '</td><td>' + (v === null ? '—' : Math.round(v)) +
+            '</td><td>' + (m === null ? '—' : Math.round(m)) + '</td>' +
+            pill(dv, winv) + pill(dj, winj) + '</tr>';
+    }
+    let f2 = '';
+    if (n5) f2 = '<tfoot><tr><td colspan="4" style="text-align:right">MAE</td>' +
+                 pill(s5 / n5, s5 <= sj5) + pill(sj5 / n5, sj5 < s5) + '</tr>' +
+                 '<tr><td colspan="4" style="text-align:right">RMSE</td>' +
+                 pill(Math.sqrt(s52 / n5), s52 <= sj52) + pill(Math.sqrt(sj52 / n5), sj52 < s52) + '</tr></tfoot>';
+    v15tbl = '<div style="margin-top:14px"><b style="color:#9b59b6">V15 (contract slot, issued 05:25 JST day before)</b></div>' +
+      '<table><thead><tr><th>JST</th><th>measured</th><th>V15</th><th>JMA MSM</th>' +
+      '<th>&Delta; V15</th><th>&Delta; JMA</th></tr></thead><tbody>' + r2 + '</tbody>' + f2 + '</table>' +
+      (n5 ? '<div class="n" style="margin-top:4px">V15 closer in <b>' + w5 + '</b> of ' + n5 + ' h</div>' : '');
+  }
   document.getElementById('htbl').innerHTML =
     '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>JMA MSM</th>' +
-    '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' +
+    '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' + v15tbl +
     (n ? '<div class="n" style="margin-top:6px;max-width:330px">&Delta; = forecast &minus; measured ' +
          '(+ over, &minus; under) &middot; ring = closer to reality &middot; V14 closer in <b>' +
          wv + '</b> of ' + n + ' h</div>'
