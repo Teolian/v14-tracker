@@ -50,14 +50,18 @@
 </style></head>
 <body><div class="wrap">
 <h1>V14 &amp; V15 vs the raw weather models — live, day by day</h1>
-<div class="sub">Solar radiation over Japan, one day ahead. Forecasts are committed
- <b>before</b> the weather happens (git timestamps) and checked against physical JMA pyranometers
- — <b>41 stations across all of Japan</b>, Hokkaido to Kyushu. Cell = average miss that day
- (RMSE, W/m², lower is better), identical hours and stations for every model ·
- <b style="color:#9b59b6">V15</b> is the next-generation model (day-ahead contract slot, issued
- 05:25&nbsp;JST the day before, ~18–41&nbsp;h leads); on past days it is shown as a back-cast
- (<b>V15*</b>) and live without a star from 2026-06-09 ·
- click a date to see that day on the map · updated 2026-06-08 11:11 JST</div>
+<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0 4px">
+ <span style="padding:6px 14px;border-radius:8px;background:#1f2430;color:#fff;font-size:13px;font-weight:600">Day-ahead 12–36h · world standard</span>
+ <a href="contract.html" style="padding:6px 14px;border-radius:8px;background:#eef0f3;color:#1f2430;text-decoration:none;font-size:13px">Contract slot · 06:00 JST · 18–41h&nbsp;→</a>
+</div>
+<div class="sub">Solar radiation over Japan, one day ahead (standard 12–36&nbsp;h horizon). Forecasts are
+ committed <b>before</b> the weather happens (git timestamps) and checked against physical JMA
+ pyranometers — <b>41 stations across Japan</b>, Hokkaido to Kyushu. Cell = average miss that day
+ (RMSE, W/m², lower is better), identical hours and stations for every model.
+ <b style="color:#9b59b6">V15</b> is the next-generation model; on past days it is shown as a
+ back-cast (<b>V15*</b>), live without a star from 2026-06-09. The
+ <a href="contract.html">contract-slot view (06:00&nbsp;JST, 18–41&nbsp;h)</a> is how we actually
+ submit. Click a date to see the map · updated 2026-06-08 11:19 JST.</div>
 <div class="chips">
  <div class="chip">won <b>6/6</b> days vs every raw NWP model</div>
  <div class="chip">all days: V14 <b>144</b> vs best raw model 185</div>
@@ -84,8 +88,9 @@ contract-slot forecasts, without a star — work-in-progress shown openly.</div>
  <span><span class="sw" style="background:#2f9e44"></span>&lt;75 excellent</span>
  <span><span class="sw" style="background:#6aa84f"></span>75–120 good</span>
  <span><span class="sw" style="background:#e8a13c"></span>120–170 hard day</span>
- <span><span class="sw" style="background:#d64545"></span>&gt;170</span>
- <span>· thresholds from published MSM evaluations: raw-NWP hourly GHI typically 95–170 W/m²</span></div>
+ <span><span class="sw" style="background:#d64545"></span>&gt;170 very hard</span></div>
+<div class="n" style="max-width:560px;margin:4px auto 0;font-size:11px;color:#6b7280">
+ Thresholds from published MSM evaluations — raw-NWP hourly GHI error is typically 95–170&nbsp;W/m².</div>
 
 <div class="maphead" id="map">
  <button class="nav" id="mprev">&larr;</button>
@@ -257,5 +262,5 @@ document.querySelectorAll('.dsel').forEach(a=>{const dd=DAYS[a.dataset.d];if(dd&
  hour-by-hour curves against the sensors.</div>
 <footer>truth = JMA pyranometer archive · forecast log is git-committed before the event ·
  rebuilt automatically by GitHub Actions, daily · <a href="method.html">methodology</a>
- · <a href="contract.html">contract slot (05:25&nbsp;JST, 18–41h)</a></footer>
+ · <a href="contract.html">contract slot (06:00&nbsp;JST, 18–41h)</a></footer>
 </div></body></html>
