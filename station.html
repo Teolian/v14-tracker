@@ -48,7 +48,9 @@
  .tgl:disabled { color:#c3cad6; background:#f3f6fa; }
  .tglrow { display:flex; gap:8px; margin:2px 0 12px; }
 
- #duo { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+ #duo { display:flex; gap:22px; flex-wrap:wrap; align-items:center; justify-content:center; }
+ #smbar { display:flex; gap:6px; justify-content:center; margin:6px 0 2px; }
+ #smbar button { padding:5px 16px; border:0; border-radius:8px; cursor:pointer; font-size:13px; }
  #chart-box { flex:1 1 540px; max-width:900px; min-width:320px; }
  #htbl table { border-collapse:collapse; }
  #htbl th { font-size:11.5px; color:var(--muted); font-weight:600; padding:3px 7px; }
@@ -64,6 +66,7 @@
 <a class="back" id="back" href="index.html">&larr; back</a>
 <h1 id="ttl">…</h1>
 <div class="sub" id="sub"></div>
+<div id="smbar"></div>
 <div id="duo"><div id="chart-box"><canvas id="ch" height="120"></canvas></div><div id="htbl"></div></div>
 <div class="how"><b>How to read.</b> The green line is the V14 forecast issued
  <i>before the day began</i> (time in the header, git-committed); the shaded band is its P10–P90
@@ -103,7 +106,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     ds.push({label: 'V15 (contract slot)', data: j.v15, borderColor: '#9b59b6', borderWidth: 2.2,
              pointRadius: 2, pointBackgroundColor: '#9b59b6', tension: .35});
   }
-  new Chart(document.getElementById('ch'), {
+  const chart = new Chart(document.getElementById('ch'), {
     type: 'line',
     data: {labels: j.hours, datasets: ds},
     options: {
@@ -182,18 +185,23 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' + v14note;
   const hasV15 = v15tbl !== '';
   const sel0 = (q.get('m') === 'v15' && hasV15) ? 'v15' : 'v14';
-  const toggle = hasV15 ? ('<div style="display:flex;gap:6px;margin-bottom:8px">' +
-    '<button id="sm14" style="padding:4px 13px;border:0;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600">V14</button>' +
-    '<button id="sm15" style="padding:4px 13px;border:0;border-radius:7px;cursor:pointer;font-size:12px">V15</button></div>') : '';
-  document.getElementById('htbl').innerHTML = toggle +
+  document.getElementById('htbl').innerHTML =
     '<div id="t14">' + t14html + '</div><div id="t15">' + v15tbl + '</div>';
+  if (hasV15) document.getElementById('smbar').innerHTML =
+    '<button id="sm14">V14</button><button id="sm15">V15</button>';
+  const V14SET = ['V14 forecast', 'P10', 'P90'], V15SET = ['V15 (contract slot)', 'V15 P10', 'V15 P90'];
   window.setSM = function(m) {
     document.getElementById('t14').style.display = m === 'v14' ? '' : 'none';
     document.getElementById('t15').style.display = m === 'v15' ? '' : 'none';
+    chart.data.datasets.forEach(dn => {
+      if (V14SET.includes(dn.label)) dn.hidden = m !== 'v14';
+      else if (V15SET.includes(dn.label)) dn.hidden = m !== 'v15';
+    });
+    chart.update();
     if (hasV15) {
       const b14 = document.getElementById('sm14'), b15 = document.getElementById('sm15');
-      b14.style.background = m === 'v14' ? '#1f2430' : '#eef0f3'; b14.style.color = m === 'v14' ? '#fff' : '#1f2430';
-      b15.style.background = m === 'v15' ? '#9b59b6' : '#eef0f3'; b15.style.color = m === 'v15' ? '#fff' : '#9b59b6';
+      b14.style.background = m === 'v14' ? '#2f9e44' : '#eef0f3'; b14.style.color = m === 'v14' ? '#fff' : '#1f2430'; b14.style.fontWeight = m === 'v14' ? '600' : '400';
+      b15.style.background = m === 'v15' ? '#9b59b6' : '#eef0f3'; b15.style.color = m === 'v15' ? '#fff' : '#1f2430'; b15.style.fontWeight = m === 'v15' ? '600' : '400';
     }
   };
   if (hasV15) {
