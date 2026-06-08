@@ -113,7 +113,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
       scales: {y: {title: {display: true, text: 'W/m²'}, beginAtZero: true},
                x: {ticks: {maxTicksLimit: 9}}}
     }});
-  // почасовая таблица: факт / V14 / дельты / JMA (вариант 1)
+  // hourly table: measured / V14 / deltas / JMA
   const ESTOPS = [[30,'#1a9850'],[75,'#66bd63'],[110,'#d9ef8b'],[140,'#fee08b'],[180,'#f46d43'],[250,'#d73027']];
   const hx = c => c.slice(1).match(/../g).map(x => parseInt(x, 16));
   const mixc = (a, b, t) => { const A = hx(a), B = hx(b);
