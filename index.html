@@ -53,9 +53,9 @@
 <div class="sub">Solar radiation over Japan, one day ahead — committed <b>before</b> the weather
  (git-timestamped) and checked against 41 physical JMA pyranometers. Cell = that day's average miss
  (RMSE&nbsp;W/m², lower better). <b style="color:#9b59b6">V15</b> = our new model (<b>V15*</b> = back-cast on archived inputs).
- Click a date for the map · updated 2026-06-11 02:08 JST.</div>
+ Click a date for the map · updated 2026-06-11 03:06 JST.</div>
 <div class="chips">
- <div class="chip">won <b>9/9</b> days vs every raw model</div>
+ <div class="chip">won <b>8/8</b> days vs every raw model</div>
  <div class="chip"><b>24%</b> more accurate than JMA MSM</div><div class="chip">forecast skill <b>0.53</b></div>
  <div class="chip">V14 <b>142</b> vs best raw <b>186</b> W/m²</div>
  <div class="chip">P10–P90 coverage <b>0.74</b>/0.80</div>
@@ -123,6 +123,7 @@ const LVL = [[100,"#c6dbef"],[250,"#9ecae1"],[400,"#6baed6"],[550,"#3182bd"],[65
 const keys = Object.keys(DAYS).sort();
 let cur = (new URLSearchParams(location.search)).get('d');
 if (!keys.includes(cur)) cur = '2026-06-10';
+if (!DAYS[cur]) cur = keys[keys.length - 1];
 let model = 'v14';
 function hex2rgb(h) { return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
 function mix(a, b, t) {

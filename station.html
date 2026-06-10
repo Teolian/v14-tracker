@@ -190,6 +190,11 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
        : '<div class="n" style="margin-top:6px">&Delta; appears when measurements arrive</div>');
   const t14html = '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>JMA MSM</th>' +
     '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' + v14note;
+  if (!hasV15line && hasV15band) {
+    v15tbl = '<div style="margin-top:14px"><b style="color:#9b59b6">V15' +
+      (j.v15_ribbon_bt ? ' band (*backfill)' : ' band (live)') +
+      '</b> — shown as the shaded ribbon on the chart; the hourly table appears with live V15 point days.</div>';
+  }
   const hasV15 = v15tbl !== '' || hasV15band;
   const sel0 = (q.get('m') === 'v15' && hasV15) ? 'v15' : 'v14';
   document.getElementById('htbl').innerHTML =
