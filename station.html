@@ -98,11 +98,15 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
      pointRadius: 2.5, pointBackgroundColor: '#1f2430', tension: .35},
     {label: 'JMA MSM (raw)', data: j.jma, borderColor: '#4878b8', borderWidth: 1.8,
      borderDash: [6, 4], pointRadius: 0, tension: .35}];
-  if (j.v15 && j.v15.some(v => v !== null)) {
+  const hasV15line = j.v15 && j.v15.some(v => v !== null);
+  const hasV15band = j.v15_p10 && j.v15_p10.some(v => v !== null);
+  if (hasV15band) {
     ds.unshift(
       {label: 'V15 P10', data: j.v15_p10, borderWidth: 0, pointRadius: 0, fill: '+1',
        backgroundColor: 'rgba(155,89,182,0.12)'},
       {label: 'V15 P90', data: j.v15_p90, borderWidth: 0, pointRadius: 0, fill: false});
+  }
+  if (hasV15line) {
     ds.push({label: 'V15', data: j.v15, borderColor: '#9b59b6', borderWidth: 2.2,
              pointRadius: 2, pointBackgroundColor: '#9b59b6', tension: .35});
   }
@@ -151,7 +155,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
                 '<tr><td colspan="4" style="text-align:right">RMSE</td>' +
                 pill(Math.sqrt(sv2 / n), sv2 <= sj2) + pill(Math.sqrt(sj2 / n), sj2 < sv2) + '</tr></tfoot>';
   let v15tbl = '';
-  if (j.v15 && j.v15.some(v => v !== null)) {
+  if (hasV15line) {
     let r2 = '', s5 = 0, sj5 = 0, s52 = 0, sj52 = 0, n5 = 0, w5 = 0;
     for (let i = 0; i < j.hours.length; i++) {
       const t = j.truth[i], v = j.v15[i], m = j.jma[i];
@@ -186,7 +190,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
        : '<div class="n" style="margin-top:6px">&Delta; appears when measurements arrive</div>');
   const t14html = '<table><thead><tr><th>JST</th><th>measured</th><th>V14</th><th>JMA MSM</th>' +
     '<th>&Delta; V14</th><th>&Delta; JMA</th></tr></thead><tbody>' + rows + '</tbody>' + foot + '</table>' + v14note;
-  const hasV15 = v15tbl !== '';
+  const hasV15 = v15tbl !== '' || hasV15band;
   const sel0 = (q.get('m') === 'v15' && hasV15) ? 'v15' : 'v14';
   document.getElementById('htbl').innerHTML =
     '<div id="t14">' + t14html + '</div><div id="t15">' + v15tbl + '</div>';
