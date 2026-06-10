@@ -172,8 +172,9 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
                  pill(s5 / n5, s5 <= sj5) + pill(sj5 / n5, sj5 < s5) + '</tr>' +
                  '<tr><td colspan="4" style="text-align:right">RMSE</td>' +
                  pill(Math.sqrt(s52 / n5), s52 <= sj52) + pill(Math.sqrt(sj52 / n5), sj52 < s52) + '</tr></tfoot>';
-    const v15lbl = j.v15_bt ? 'V15 (back-cast on archived inputs*)'
-                  : 'V15 (issued ' + (j.v15_issued || 'before the day began') + ')';
+    const v15lbl = (j.v15_bt ? 'V15 (back-cast on archived inputs*)'
+                  : 'V15 (issued ' + (j.v15_issued || 'before the day began') + ')')
+                  + (j.v15_ribbon_bt ? ' · band: *backfill' : '');
     v15tbl = '<div style="margin-top:14px"><b style="color:#9b59b6">' + v15lbl + '</b></div>' +
       '<table><thead><tr><th>JST</th><th>measured</th><th>V15</th><th>JMA MSM</th>' +
       '<th>&Delta; V15</th><th>&Delta; JMA</th></tr></thead><tbody>' + r2 + '</tbody>' + f2 + '</table>' +
