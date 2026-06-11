@@ -79,6 +79,7 @@
  Narrow band = confident day, wide = volatile day &mdash; that width is exactly the uncertainty a
  market player should price. <b style="color:#d64545">Red dots</b> = the hours the band missed.</div>
 <div id="smbar"></div>
+<div class="sub" id="bandcap" style="text-align:center;margin:2px 0 0"></div>
 <div id="duo"><div id="chart-box"><canvas id="ch" height="120"></canvas></div><div id="htbl"></div></div>
 <div class="how"><b>How to read.</b> Red dots on the black line mark measured hours that fell
  <b>outside the shown band</b>. The green line is the V14 forecast issued
@@ -130,13 +131,21 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     ds.push({label: 'V15', data: j.v15, borderColor: '#9b59b6', borderWidth: 2.2,
              pointRadius: 2, pointBackgroundColor: '#9b59b6', tension: .35});
   }
+  const OL = {borderWidth: 1.6, borderDash: [5, 4], pointRadius: 0, fill: false, hidden: true, tension: .35};
+  if (hasJmaBand) ds.push(
+    {label: 'JMA* lo', data: j.jma_p10, borderColor: '#4878b8', ...OL},
+    {label: 'JMA* hi', data: j.jma_p90, borderColor: '#4878b8', ...OL});
+  if (hasV15band) ds.push(
+    {label: 'V15 lo', data: j.v15_p10, borderColor: '#9b59b6', ...OL},
+    {label: 'V15 hi', data: j.v15_p90, borderColor: '#9b59b6', ...OL});
   const chart = new Chart(document.getElementById('ch'), {
     type: 'line',
     data: {labels: j.hours, datasets: ds},
     options: {
       animation: false, maintainAspectRatio: true, aspectRatio: 1.9,
       interaction: {mode: 'index', intersect: false},
-      plugins: {legend: {labels: {filter: i => !['P10', 'P90', 'V15 P10', 'V15 P90', 'JMA P10', 'JMA P90'].includes(i.text)}}},
+      plugins: {legend: {labels: {filter: i => !['P10', 'P90', 'V15 P10', 'V15 P90', 'JMA P10', 'JMA P90',
+        'JMA* lo', 'JMA* hi', 'V15 lo', 'V15 hi'].includes(i.text)}}},
       scales: {y: {title: {display: true, text: 'W/m²'}, beginAtZero: true},
                x: {ticks: {maxTicksLimit: 9}}}
     }});
@@ -253,6 +262,8 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
       if (V14SET.includes(dn.label)) dn.hidden = m !== 'v14';
       else if (V15SET.includes(dn.label)) dn.hidden = m !== 'v15';
       else if (JMASET.includes(dn.label)) dn.hidden = m !== 'jma';
+      else if (dn.label === 'JMA* lo' || dn.label === 'JMA* hi') dn.hidden = m !== 'v15';
+      else if (dn.label === 'V15 lo' || dn.label === 'V15 hi') dn.hidden = m !== 'jma';
     });
     missPaint(m);
     chart.update();
@@ -269,6 +280,19 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     const b = document.getElementById(bid);
     if (b) b.onclick = function() { setSM(mm); };
   }
+  function meanW(lo, hi) {
+    let s = 0, n = 0;
+    for (let i = 0; i < lo.length; i++)
+      if (lo[i] !== null && hi[i] !== null) { s += Math.abs(hi[i] - lo[i]); n++; }
+    return n ? s / n : null;
+  }
+  const w15 = hasV15band ? meanW(j.v15_p10, j.v15_p90) : null;
+  const wjma = hasJmaBand ? meanW(j.jma_p10, j.jma_p90) : null;
+  if (w15 && wjma)
+    document.getElementById('bandcap').innerHTML =
+      'Same 8-of-10 promise this day: <b style="color:#9b59b6">V15 band ' + Math.round(w15) +
+      '</b> W/m² average — the <b style="color:#4878b8">JMA* baseline needs ' + Math.round(wjma) +
+      '</b> (<b>&times;' + (wjma / w15).toFixed(1) + ' wider</b>). The dashed outline shows the other band.';
   setSM(sel0);
 }).catch(() => {
   document.getElementById('ttl').textContent = 'No data for ' + st + ' / ' + d;
