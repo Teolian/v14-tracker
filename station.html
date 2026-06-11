@@ -47,6 +47,14 @@
  .tgl.on { background:#1f2430; border-color:#1f2430; color:white; }
  .tgl:disabled { color:#c3cad6; background:#f3f6fa; }
  .tglrow { display:flex; gap:8px; margin:2px 0 12px; }
+ .tbox { overflow-x:auto; }
+ .tbox td.date, .tbox thead th:first-child { position:sticky; left:0; background:var(--paper); z-index:2; }
+ @media (max-width:640px) {
+   body { padding:16px 8px; } h1 { font-size:21px; }
+   .chip { font-size:12px; padding:7px 10px; } .chip b { font-size:14.5px; }
+   td { padding:7px 3px; font-size:13px; }
+   .val { min-width:38px; padding:5px 8px; font-size:14px; }
+ }
 
  #duo { display:flex; gap:22px; flex-wrap:wrap; align-items:center; justify-content:center; }
  #smbar { display:flex; gap:6px; justify-content:center; margin:6px 0 2px; }
@@ -68,7 +76,8 @@
 <div class="sub" id="sub"></div>
 <div id="smbar"></div>
 <div id="duo"><div id="chart-box"><canvas id="ch" height="120"></canvas></div><div id="htbl"></div></div>
-<div class="how"><b>How to read.</b> The green line is the V14 forecast issued
+<div class="how"><b>How to read.</b> Red dots on the black line mark measured hours that fell
+ <b>outside the shown band</b>. The green line is the V14 forecast issued
  <i>before the day began</i> (time in the header, git-committed); the shaded band is its P10–P90
  uncertainty interval (80% of reality should fall inside); the black line is what physical JMA
  pyranometers actually measured; the dashed blue line is the official JMA MSM forecast —
@@ -202,6 +211,16 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
   if (hasV15) document.getElementById('smbar').innerHTML =
     '<button id="sm14">V14</button><button id="sm15">V15</button>';
   const V14SET = ['V14 forecast', 'P10', 'P90'], V15SET = ['V15', 'V15 P10', 'V15 P90'];
+  const truthDs = chart.data.datasets.find(dn => dn.label === 'Reality (pyranometer)');
+  function missPaint(m) {                       // красные точки = факт вне ПОКАЗАННОЙ ленты
+    const lo = m === 'v15' ? j.v15_p10 : j.p10, hi = m === 'v15' ? j.v15_p90 : j.p90;
+    if (!truthDs || !lo || !hi) return;
+    const out = j.truth.map((t, i) => t !== null && lo[i] !== null && hi[i] !== null &&
+      (t < Math.min(lo[i], hi[i]) || t > Math.max(lo[i], hi[i])));
+    truthDs.pointBackgroundColor = out.map(o => o ? '#d64545' : '#1f2430');
+    truthDs.pointBorderColor = out.map(o => o ? '#d64545' : '#1f2430');
+    truthDs.pointRadius = out.map(o => o ? 4.5 : 2.5);
+  }
   window.setSM = function(m) {
     document.getElementById('t14').style.display = m === 'v14' ? '' : 'none';
     document.getElementById('t15').style.display = m === 'v15' ? '' : 'none';
@@ -209,6 +228,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
       if (V14SET.includes(dn.label)) dn.hidden = m !== 'v14';
       else if (V15SET.includes(dn.label)) dn.hidden = m !== 'v15';
     });
+    missPaint(m);
     chart.update();
     if (hasV15) {
       const b14 = document.getElementById('sm14'), b15 = document.getElementById('sm15');

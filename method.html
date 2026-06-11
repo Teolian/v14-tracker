@@ -47,6 +47,14 @@
  .tgl.on { background:#1f2430; border-color:#1f2430; color:white; }
  .tgl:disabled { color:#c3cad6; background:#f3f6fa; }
  .tglrow { display:flex; gap:8px; margin:2px 0 12px; }
+ .tbox { overflow-x:auto; }
+ .tbox td.date, .tbox thead th:first-child { position:sticky; left:0; background:var(--paper); z-index:2; }
+ @media (max-width:640px) {
+   body { padding:16px 8px; } h1 { font-size:21px; }
+   .chip { font-size:12px; padding:7px 10px; } .chip b { font-size:14.5px; }
+   td { padding:7px 3px; font-size:13px; }
+   .val { min-width:38px; padding:5px 8px; font-size:14px; }
+ }
 
  .m h2 { margin-top:26px; } .m p, .m li { font-size:14px; line-height:1.6; }
  .m code { background:#eef1f5; padding:1px 5px; border-radius:5px; }
