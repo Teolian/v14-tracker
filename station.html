@@ -113,6 +113,13 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
      borderDash: [6, 4], pointRadius: 0, tension: .35}];
   const hasV15line = j.v15 && j.v15.some(v => v !== null);
   const hasV15band = j.v15_p10 && j.v15_p10.some(v => v !== null);
+  const hasJmaBand = j.jma_p10 && j.jma_p10.some(v => v !== null);
+  if (hasJmaBand) {
+    ds.unshift(
+      {label: 'JMA P10', data: j.jma_p10, borderWidth: 0, pointRadius: 0, fill: '+1',
+       backgroundColor: 'rgba(72,120,184,0.13)', hidden: true},
+      {label: 'JMA P90', data: j.jma_p90, borderWidth: 0, pointRadius: 0, fill: false, hidden: true});
+  }
   if (hasV15band) {
     ds.unshift(
       {label: 'V15 P10', data: j.v15_p10, borderWidth: 0, pointRadius: 0, fill: '+1',
@@ -129,7 +136,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     options: {
       animation: false, maintainAspectRatio: true, aspectRatio: 1.9,
       interaction: {mode: 'index', intersect: false},
-      plugins: {legend: {labels: {filter: i => !['P10', 'P90', 'V15 P10', 'V15 P90'].includes(i.text)}}},
+      plugins: {legend: {labels: {filter: i => !['P10', 'P90', 'V15 P10', 'V15 P90', 'JMA P10', 'JMA P90'].includes(i.text)}}},
       scales: {y: {title: {display: true, text: 'W/m²'}, beginAtZero: true},
                x: {ticks: {maxTicksLimit: 9}}}
     }});
@@ -210,14 +217,26 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
   }
   const hasV15 = v15tbl !== '' || hasV15band;
   const sel0 = (q.get('m') === 'v15' && hasV15) ? 'v15' : 'v14';
+  const jmaNote = hasJmaBand ?
+    '<div style="margin-top:14px;max-width:340px;font-size:12.5px;color:#3c4654">' +
+    '<b style="color:#4878b8">JMA* band</b> = the raw JMA MSM forecast &plusmn; <i>our</i> ' +
+    'trailing-window calibration (same 8-of-10 promise, recomputed nightly). Raw NWP models ' +
+    'publish no uncertainty &mdash; this is a reconstructed baseline. Note how much <b>wider</b> ' +
+    'it must be to keep the same promise, and that its width barely changes day to day: without ' +
+    'ensemble information it cannot know <i>when</i> it is uncertain.</div>' : '';
   document.getElementById('htbl').innerHTML =
-    '<div id="t14">' + t14html + '</div><div id="t15">' + v15tbl + '</div>';
-  if (hasV15) document.getElementById('smbar').innerHTML =
-    '<button id="sm14">V14</button><button id="sm15">V15</button>';
+    '<div id="t14">' + t14html + '</div><div id="t15">' + v15tbl + '</div>' +
+    '<div id="tjma" style="display:none">' + jmaNote + '</div>';
+  let smb = '';
+  if (hasV15 || hasJmaBand) smb += '<button id="sm14">V14</button>';
+  if (hasV15) smb += '<button id="sm15">V15</button>';
+  if (hasJmaBand) smb += '<button id="smjma" title="reconstructed: JMA MSM ± our calibration — raw NWP publishes no band">JMA*</button>';
+  document.getElementById('smbar').innerHTML = smb;
   const V14SET = ['V14 forecast', 'P10', 'P90'], V15SET = ['V15', 'V15 P10', 'V15 P90'];
   const truthDs = chart.data.datasets.find(dn => dn.label === 'Reality (pyranometer)');
   function missPaint(m) {                       // красные точки = факт вне ПОКАЗАННОЙ ленты
-    const lo = m === 'v15' ? j.v15_p10 : j.p10, hi = m === 'v15' ? j.v15_p90 : j.p90;
+    const lo = m === 'v15' ? j.v15_p10 : (m === 'jma' ? j.jma_p10 : j.p10),
+          hi = m === 'v15' ? j.v15_p90 : (m === 'jma' ? j.jma_p90 : j.p90);
     if (!truthDs || !lo || !hi) return;
     const out = j.truth.map((t, i) => t !== null && lo[i] !== null && hi[i] !== null &&
       (t < Math.min(lo[i], hi[i]) || t > Math.max(lo[i], hi[i])));
@@ -225,24 +244,30 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     truthDs.pointBorderColor = out.map(o => o ? '#d64545' : '#1f2430');
     truthDs.pointRadius = out.map(o => o ? 4.5 : 2.5);
   }
+  const JMASET = ['JMA P10', 'JMA P90'];
   window.setSM = function(m) {
     document.getElementById('t14').style.display = m === 'v14' ? '' : 'none';
     document.getElementById('t15').style.display = m === 'v15' ? '' : 'none';
+    document.getElementById('tjma').style.display = m === 'jma' ? '' : 'none';
     chart.data.datasets.forEach(dn => {
       if (V14SET.includes(dn.label)) dn.hidden = m !== 'v14';
       else if (V15SET.includes(dn.label)) dn.hidden = m !== 'v15';
+      else if (JMASET.includes(dn.label)) dn.hidden = m !== 'jma';
     });
     missPaint(m);
     chart.update();
-    if (hasV15) {
-      const b14 = document.getElementById('sm14'), b15 = document.getElementById('sm15');
-      b14.style.background = m === 'v14' ? '#2f9e44' : '#eef0f3'; b14.style.color = m === 'v14' ? '#fff' : '#1f2430'; b14.style.fontWeight = m === 'v14' ? '600' : '400';
-      b15.style.background = m === 'v15' ? '#9b59b6' : '#eef0f3'; b15.style.color = m === 'v15' ? '#fff' : '#1f2430'; b15.style.fontWeight = m === 'v15' ? '600' : '400';
+    const palette = {v14: '#2f9e44', v15: '#9b59b6', jma: '#4878b8'};
+    for (const [bid, mm] of [['sm14', 'v14'], ['sm15', 'v15'], ['smjma', 'jma']]) {
+      const b = document.getElementById(bid);
+      if (!b) continue;
+      b.style.background = m === mm ? palette[mm] : '#eef0f3';
+      b.style.color = m === mm ? '#fff' : '#1f2430';
+      b.style.fontWeight = m === mm ? '600' : '400';
     }
   };
-  if (hasV15) {
-    document.getElementById('sm14').onclick = function() { setSM('v14'); };
-    document.getElementById('sm15').onclick = function() { setSM('v15'); };
+  for (const [bid, mm] of [['sm14', 'v14'], ['sm15', 'v15'], ['smjma', 'jma']]) {
+    const b = document.getElementById(bid);
+    if (b) b.onclick = function() { setSM(mm); };
   }
   setSM(sel0);
 }).catch(() => {
