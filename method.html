@@ -60,7 +60,10 @@ is backfitted, re-run, or selected after the fact.</p>
 
 <h2>1. What is being forecast</h2>
 <p>Surface solar irradiance (GHI, W/m&sup2;) at <b>41 JMA pyranometer sites</b> across Japan,
-hourly, for the next day. Ground truth = the official JMA pyranometer archive, published after
+hourly, for the next day. <b>V15</b> is the current model &mdash; its live count started
+<b>Jun&nbsp;11,&nbsp;2026</b>; any earlier starred value is a back-cast/backfill computed on archived
+inputs and is always marked. <b>V14</b> remains the long-running benchmark line. Only forecasts
+committed <i>before the start of the target day</i> are scored as live. Ground truth = the official JMA pyranometer archive, published after
 each day closes (~00:30 JST). Only daylight hours are scored (clear-sky irradiance &gt; 10 W/m&sup2;).</p>
 
 <h2>2. Issue times and lead windows</h2>
@@ -100,12 +103,24 @@ government model output with correlation 0.989, median difference 0.4 W/m&sup2;)
  in the literature.</li>
 <li><b>P10&ndash;P90 coverage (PICP)</b> &mdash; how often reality falls inside our published
  80% uncertainty band; the honesty of the band, target 0.80.</li>
+<li><b>Pinball loss</b> &mdash; the standard quantile-forecast score (mean of the 0.1 and 0.9
+ pinball losses); how we compare uncertainty bands to each other.</li>
 </ul>
 <p>Published daytime RMSE for the raw operational mesoscale model over Japan ranges roughly
 95&ndash;170 W/m&sup2; across regions and seasons (Solar Energy 2012&ndash;2015; Energy Procedia 2014)
 &mdash; the colour scale of the tracker is anchored to that literature.</p>
 
-<h2>6. Provenance &amp; reproducibility</h2>
+<h2>6. The V15 ribbon (P10&ndash;P90)</h2>
+<p>The shaded band on station pages is produced by <b>hourly quantile models recalibrated daily</b>
+against the latest verified observations &mdash; a rolling conformal scheme with a multi-week
+window, a publication-lag embargo and separate calibration per sky regime. The band aims to
+contain reality 80% of the time, and its width <i>breathes</i>: narrow on stable clear days, wide
+in changeable weather &mdash; that width is exactly the uncertainty a market participant should
+price. Rare quantile crossings are displayed sorted. Days computed on archived inputs are always
+marked (<b>*backfill</b>); the live parallel log started Jun&nbsp;11,&nbsp;2026. The previous
+3-hourly band is still logged in parallel for honest comparison but is no longer displayed.</p>
+
+<h2>7. Provenance &amp; reproducibility</h2>
 <p>Each forecast run is appended to a log and committed to git minutes after issuance &mdash; the
 commit timestamp precedes the forecast validity period. The site is rebuilt automatically once a
 day after JMA publishes observations; no manual step touches the numbers. Sample sizes are shown
