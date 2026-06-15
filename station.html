@@ -263,7 +263,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
       if (V14SET.includes(dn.label)) dn.hidden = m !== 'v14';
       else if (V15SET.includes(dn.label)) dn.hidden = m !== 'v15';
       else if (JMASET.includes(dn.label)) dn.hidden = m !== 'jma';
-      else if (dn.label === 'JMA* lo' || dn.label === 'JMA* hi') dn.hidden = m !== 'v15';
+      else if (dn.label === 'JMA* lo' || dn.label === 'JMA* hi') dn.hidden = true;   // V15-вид чистый как V14: без JMA*-пунктира (сравнение — в отдельной вкладке JMA*)
       else if (dn.label === 'V15 lo' || dn.label === 'V15 hi') dn.hidden = m !== 'jma';
     });
     missPaint(m);
@@ -293,7 +293,7 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     document.getElementById('bandcap').innerHTML =
       'Same 8-of-10 promise this day: <b style="color:#9b59b6">V15 band ' + Math.round(w15) +
       '</b> W/m² average — the <b style="color:#4878b8">JMA* baseline needs ' + Math.round(wjma) +
-      '</b> (<b>&times;' + (wjma / w15).toFixed(1) + ' wider</b>). The dashed outline shows the other band.';
+      '</b> (<b>&times;' + (wjma / w15).toFixed(1) + ' wider</b>).';
   setSM(sel0);
 }).catch(() => {
   document.getElementById('ttl').textContent = 'No data for ' + st + ' / ' + d;
