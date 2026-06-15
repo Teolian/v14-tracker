@@ -238,8 +238,8 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     '<div id="t14">' + t14html + '</div><div id="t15">' + v15tbl + '</div>' +
     '<div id="tjma" style="display:none">' + jmaNote + '</div>';
   let smb = '';
-  if (hasV15 || hasJmaBand) smb += '<button id="sm14">V14</button>';
   if (hasV15) smb += '<button id="sm15">V15</button>';
+  if (hasV15 || hasJmaBand) smb += '<button id="sm14">V14</button>';
   if (hasJmaBand) smb += '<button id="smjma" title="reconstructed: JMA MSM ± our calibration — raw NWP publishes no band">JMA*</button>';
   document.getElementById('smbar').innerHTML = smb;
   const V14SET = ['V14 forecast', 'P10', 'P90'], V15SET = ['V15', 'V15 P10', 'V15 P90'];
