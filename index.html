@@ -62,7 +62,7 @@
 <div class="sub">Solar radiation over Japan, one day ahead — committed <b>before</b> the weather
  (git-timestamped) and checked against 41 physical JMA pyranometers. Cell = that day's average miss
  (RMSE&nbsp;W/m², lower better). <b style="color:#9b59b6">V15</b> = our new model (<b>V15*</b> = back-cast on archived inputs).
- Click a date for the map · updated 2026-06-22 12:10 JST.</div>
+ Click a date for the map · updated 2026-06-22 12:13 JST.</div>
 <div class="chips">
  <div class="chip" title="days (JST) where V14 beat JMA MSM, ECMWF and GFS simultaneously on identical rows">won <b>13/19</b> days vs every raw model</div>
  <div class="chip" title="V15 radiation RMSE reduction vs the raw JMA MSM model on identical aligned rows, all days pooled"><b>16%</b> more accurate than JMA MSM</div><div class="chip" title="1 − RMSE/RMSE(smart persistence). Day-ahead skill of 0.3–0.4 is considered strong">forecast skill <b>0.51</b></div><div class="chip">V15 radiation upgrade <b>115</b> vs V14 <b>130</b> W/m&sup2;</div>
@@ -124,6 +124,7 @@ function setMx(x){
 </div>
 <div class="sub" id="msub"></div>
 <div class="tglrow">
+ <button class="nav tgl" id="bvs">V15 vs JMA %</button>
  <button class="nav tgl" id="bv15">V15</button>
  <button class="nav tgl" id="bv14">V14 forecast</button>
  <button class="nav tgl" id="bjma">JMA MSM forecast</button>
@@ -156,7 +157,7 @@ const keys = Object.keys(DAYS).sort();
 let cur = (new URLSearchParams(location.search)).get('d');
 if (!keys.includes(cur)) cur = '2026-06-21';
 if (!DAYS[cur]) cur = keys[keys.length - 1];
-let model = 'v15';   // карта по умолчанию = V15 (render() сам падает на v14, если у дня нет V15)
+let model = 'vs';   // карта по умолчанию = V15-vs-JMA % (render() падает на v14, если день не закрыт / нет V15)
 let MX = 'r';
 window.mapSetMx = function(x) { MX = x === 'm' ? 'm' : 'r'; render(); };
 function hex2rgb(h) { return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
@@ -175,6 +176,14 @@ function dark(v, stops) {
   const c = colorOf(v, stops), m = c.match(/\d+/g);
   return (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) < 150;
 }
+function skillPct(r) {                                  // V15-vs-JMA skill% за день: (JMA_RMSE − V15_RMSE)/JMA_RMSE·100; + = V15 точнее
+  return (r[2] !== null && r[2] !== undefined && r[2] > 0 && r[4] !== null && r[4] !== undefined) ? (r[2] - r[4]) / r[2] * 100 : null;
+}
+function skillColor(s) {                                // зелёный = V15 выиграла (гуще = больше); оранж = проигрыш <10%; красный = проигрыш >10% (гуще)
+  if (s >= 0) { const t = Math.min(s / 25, 1); return 'rgb(' + Math.round(168 - 148 * t) + ',' + Math.round(206 - 70 * t) + ',' + Math.round(146 - 88 * t) + ')'; }
+  if (s > -10) return '#e8902e';
+  const t = Math.min((-s - 10) / 20, 1); return 'rgb(' + Math.round(224 - 36 * t) + ',' + Math.round(94 - 60 * t) + ',' + Math.round(70 - 42 * t) + ')';
+}
 function fmtDate(d) {
   return new Date(d + 'T00:00').toLocaleDateString('en', {month:'long', day:'numeric'});
 }
@@ -186,18 +195,20 @@ function render() {
   if (model === 'truth' && !hasTruth) model = 'v14';
   if (model === 'v15' && (!hasV15 || !V15_ON)) model = 'v14';
   if (model === 'rib' && !hasRib) model = 'v14';
+  if (model === 'vs' && (D.mode !== 'rmse' || !hasV15 || !V15_ON)) model = 'v14';   // V15-vs-JMA только на ЗАКРЫТЫХ днях (нужны RMSE обоих)
   const ribView = model === 'rib';
-  const errView = D.mode === 'rmse' && model !== 'truth' && !ribView;
+  const vsView = model === 'vs';
+  const errView = D.mode === 'rmse' && model !== 'truth' && !ribView && !vsView;
   const mi = {v14: 6, jma: 7, v15: 8}[model];
   const maeView = errView && MX === 'm' && mi !== undefined &&
     D.rows.some(r => r[mi] !== undefined && r[mi] !== null);
   const MET = maeView ? 'MAE' : 'RMSE';
   const stops = ribView ? RIBW : (errView ? (maeView ? ERRM : ERR) : LVL);
   const vi = maeView ? mi : {v14: 1, jma: 2, truth: 3, v15: 4, rib: 5}[model];
-  const mname = {v14: 'V14', jma: 'JMA MSM', truth: 'measured', v15: 'V15 (day-ahead)', rib: 'P10–P90 width'}[model];
+  const mname = {v14: 'V14', jma: 'JMA MSM', truth: 'measured', v15: 'V15 (day-ahead)', rib: 'P10–P90 width', vs: 'V15 vs JMA MSM'}[model];
   document.getElementById('mprev').disabled = i <= 0;
   document.getElementById('mnext').disabled = i >= keys.length - 1;
-  for (const [id, m] of [['bv14', 'v14'], ['bv15', 'v15'], ['bjma', 'jma'], ['btruth', 'truth'], ['brib', 'rib']])
+  for (const [id, m] of [['bvs', 'vs'], ['bv14', 'v14'], ['bv15', 'v15'], ['bjma', 'jma'], ['btruth', 'truth'], ['brib', 'rib']])
     document.getElementById(id).classList.toggle('on', model === m);
   document.getElementById('btruth').disabled = !hasTruth;
   document.getElementById('btruth').title = hasTruth ? '' :
@@ -208,15 +219,22 @@ function render() {
   document.getElementById('brib').disabled = !hasRib;
   document.getElementById('brib').title = hasRib ? 'average daily width of the V15 ribbon' :
     'appears for days with the v2 ribbon';
+  document.getElementById('bvs').disabled = D.mode !== 'rmse' || !hasV15 || !V15_ON;
+  document.getElementById('bvs').title = (D.mode !== 'rmse') ? 'V15-vs-JMA appears once the day closes (truth published)' :
+    (!V15_ON ? 'V15 display paused while the model is in development' : (hasV15 ? 'how much V15 beats raw JMA MSM per station, %' : 'V15 accuracy appears once that day closes'));
   document.getElementById('cbErr').style.display = (errView && !maeView) ? '' : 'none';
   document.getElementById('cbErrM').style.display = (errView && maeView) ? '' : 'none';
-  document.getElementById('cbLvl').style.display = (errView || ribView) ? 'none' : '';
+  document.getElementById('cbLvl').style.display = (errView || ribView || vsView) ? 'none' : '';
   document.getElementById('cbRib').style.display = ribView ? '' : 'none';
   const noteHtml = D.note ? ' — <span style="color:' +
     (D.note.includes('TYPHOON') ? '#d64545' : '#7a8494') + '">' + D.note + '</span>' : '';
   document.getElementById('mtitle').innerHTML = fmtDate(cur) + noteHtml;
   let what;
-  if (ribView)
+  if (vsView)
+    what = ' · circle = <b>V15 vs JMA MSM</b> this day — % the V15 day-ahead RMSE beats the raw JMA model per station · ' +
+           '<b style="color:#1a8c3c">green</b> = V15 won, <b style="color:#e8902e">orange</b> = lost &lt;10%, ' +
+           '<b style="color:#c83020">red</b> = lost &gt;10% · identical aligned rows';
+  else if (ribView)
     what = ' · circle = average <b>P10–P90 ribbon width</b> that day (W/m², daylight): how much ' +
            'uncertainty V15 prices — narrow = confident, wide = changeable weather' +
            (cur <= '2026-06-09' ? ' · <b>*backfill</b>' : '');
@@ -237,33 +255,44 @@ function render() {
     (D.committed ? ' (committed before the day began)' : ' <b>(warm-up run)</b>') +
     what + ' · click a station for hour-by-hour curves';
   let g = '';
-  const vals = D.rows.filter(r => r[vi] !== null && r[vi] !== undefined);
-  const worst = (errView || ribView) && vals.length ? vals.reduce((a, b) => a[vi] > b[vi] ? a : b) : null;
-  const best = (errView || ribView) && vals.length ? vals.reduce((a, b) => a[vi] < b[vi] ? a : b) : null;
+  const valOf = r => vsView ? skillPct(r) : r[vi];
+  const fmtV = v => vsView ? ((v >= 0 ? '+' : '') + Math.round(v) + '%') : Math.round(v);
+  const vals = D.rows.filter(r => valOf(r) !== null && valOf(r) !== undefined);
+  const worst = (errView || ribView || vsView) && vals.length ? vals.reduce((a, b) => valOf(a) > valOf(b) ? a : b) : null;
+  const best = (errView || ribView || vsView) && vals.length ? vals.reduce((a, b) => valOf(a) < valOf(b) ? a : b) : null;
   for (const r of D.rows) {
-    const st = r[0], v = r[vi];
+    const v = valOf(r);
     if (v === null || v === undefined) continue;
-    const [x, y] = XY[st], c = colorOf(v, stops);
-    const tc = dark(v, stops) ? 'white' : '#1f2430';
-    g += '<a href="station.html?s=' + st + '&d=' + cur + '&m=' + (model === 'rib' ? 'v15' : model) + '"><g filter="url(#ds)">' +
-         '<title>' + st + ': ' + Math.round(v) + '</title>' +
+    const st = r[0];
+    const [x, y] = XY[st];
+    const c = vsView ? skillColor(v) : colorOf(v, stops);
+    const tc = vsView ? ((v >= 12 || v <= -18) ? 'white' : '#1f2430') : (dark(v, stops) ? 'white' : '#1f2430');
+    g += '<a href="station.html?s=' + st + '&d=' + cur + '&m=' + (model === 'rib' || vsView ? 'v15' : model) + '"><g filter="url(#ds)">' +
+         '<title>' + st + ': ' + fmtV(v) + '</title>' +
          '<circle cx="' + x + '" cy="' + y + '" r="13" fill="' + c +
          '" stroke="white" stroke-width="1.8"/>' +
-         '<text x="' + x + '" y="' + (y + 3.5) + '" text-anchor="middle" font-size="9.8" ' +
-         'font-weight="bold" fill="' + tc + '">' + Math.round(v) + '</text></g></a>';
+         '<text x="' + x + '" y="' + (y + 3.5) + '" text-anchor="middle" font-size="' + (vsView ? '8.4' : '9.8') + '" ' +
+         'font-weight="bold" fill="' + tc + '">' + fmtV(v) + '</text></g></a>';
   }
-  for (const [r, lbl] of [[best, ribView ? 'narrowest' : 'best'], [worst, ribView ? 'widest' : 'hardest']]) {
+  for (const [r, lbl] of [[best, vsView ? 'most lost' : (ribView ? 'narrowest' : 'best')], [worst, vsView ? 'most won' : (ribView ? 'widest' : 'hardest')]]) {
     if (!r) continue;
     const [x, y] = XY[r[0]];
     g += '<text x="' + (x + 17) + '" y="' + (y - 10) + '" font-size="8.6" fill="#1f2430" ' +
          'font-weight="bold" style="paint-order:stroke;stroke:#fff;stroke-width:3px">' +
-         lbl + ': ' + r[0] + ' ' + Math.round(r[vi]) + '</text>';
+         lbl + ': ' + r[0] + ' ' + fmtV(valOf(r)) + '</text>';
   }
   document.getElementById('circ').innerHTML = g;
   let side = '';
   const row = ([st, v]) => '<tr><td><a href="station.html?s=' + st + '&d=' + cur + '&m=' + model + '">' +
     st + '</a></td><td><b>' + Math.round(v) + '</b></td></tr>';
-  if (ribView) {
+  if (vsView) {
+    const srt = vals.map(r => [r[0], skillPct(r)]).sort((a, b) => b[1] - a[1]);
+    const won = vals.filter(r => skillPct(r) >= 0).length;
+    const vrow = ([st, v]) => '<tr><td><a href="station.html?s=' + st + '&d=' + cur + '&m=v15">' + st + '</a></td><td><b>' + (v >= 0 ? '+' : '') + Math.round(v) + '%</b></td></tr>';
+    side = '<h3>V15 beat JMA most</h3><table>' + srt.slice(0, 5).map(vrow).join('') +
+           '</table><h3>V15 lost most</h3><table>' + srt.slice(-5).reverse().map(vrow).join('') +
+           '</table><p style="font-size:12.5px;color:#7a8494;margin-top:12px">V15 was more accurate than raw JMA MSM at <b>' + won + ' of ' + vals.length + '</b> stations this day.</p>';
+  } else if (ribView) {
     const srt = vals.map(r => [r[0], r[vi]]).sort((a, b) => a[1] - b[1]);
     side = '<h3>Narrowest band (most confident)</h3><table>' +
            srt.slice(0, 5).map(row).join('') +
@@ -305,6 +334,7 @@ document.getElementById('mprev').onclick = () => { cur = keys[keys.indexOf(cur) 
 document.getElementById('mnext').onclick = () => { cur = keys[keys.indexOf(cur) + 1]; render(); };
 document.getElementById('bv14').onclick = () => { model = 'v14'; render(); };
 document.getElementById('bv15').onclick = () => { model = 'v15'; render(); };
+document.getElementById('bvs').onclick = () => { model = 'vs'; render(); };
 document.getElementById('bjma').onclick = () => { model = 'jma'; render(); };
 document.getElementById('btruth').onclick = () => { model = 'truth'; render(); };
 document.getElementById('brib').onclick = () => { model = 'rib'; render(); };
