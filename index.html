@@ -62,13 +62,10 @@
 <div class="sub">Solar radiation over Japan, one day ahead — committed <b>before</b> the weather
  (git-timestamped) and checked against 41 physical JMA pyranometers. Cell = that day's average miss
  (RMSE&nbsp;W/m², lower better). <b style="color:#9b59b6">V15</b> = our new model (<b>V15*</b> = back-cast on archived inputs).
- Click a date for the map · updated 2026-06-23 23:27 JST.</div>
+ Click a date for the map · updated 2026-06-23 23:36 JST.</div>
 <div class="chips">
  <div class="chip" title="days (JST) where V14 beat JMA MSM, ECMWF and GFS simultaneously on identical rows">won <b>14/20</b> days vs every raw model</div>
  <div class="chip" title="V15 radiation RMSE reduction vs the raw JMA MSM model on identical aligned rows, all days pooled"><b>17%</b> more accurate than JMA MSM</div><div class="chip" title="1 − RMSE/RMSE(smart persistence). Day-ahead skill of 0.3–0.4 is considered strong">forecast skill <b>0.50</b></div><div class="chip">V15 radiation upgrade <b>114</b> vs V14 <b>131</b> W/m&sup2;</div>
- <div class="chip" title="best raw = lowest-RMSE of JMA / ECMWF / GFS on the same rows">V14 <b>137</b> vs best raw <b>183</b> W/m²</div>
- <div class="chip" title="share of hours where measurements fell inside V14’s P10–P90 band (target 0.80)">V14 P10–P90 coverage <b>0.72</b>/0.80</div>
- <div class="chip" title="share of hours inside the V15 hourly ribbon — live days only, no backfill">V15 ribbon coverage <b>0.77</b>/0.80 <span class="n">live · 12 days</span></div>
  <div class="chip"><b>41</b> stations · all Japan</div>
  <div class="chip" title="hour × station × forecast-run triples verified against JMA pyranometers (day-ahead 12–36h window, identical rows for all models)"><b>52&thinsp;372</b> verified rows</div>
 </div>
@@ -110,7 +107,7 @@ function setMx(x){
  if(window.mapSetMx)window.mapSetMx(x);
 }</script>
 <div class="n" style="max-width:620px;margin:6px auto 0;font-size:11px;color:#8a909c">
-<b style="color:#9b59b6">V15</b> = the current model — live count started <b>Jun 11, 2026</b> · <b>V15*</b> = back-cast on archived inputs (pre-launch days) · point column fills from LIVE v3 days only (count started Jun 11; back-cast lines remain on station pages). New <b>hourly ribbon</b> on station pages: June PICP <b>0.79</b>/0.80, pinball &minus;27% vs the old band (<i>*backfill</i> on days before the live parallel log started).</div>
+<b style="color:#9b59b6">V15</b> = the current model — live count started <b>Jun 11, 2026</b> · <b>V15*</b> = back-cast on archived inputs (pre-launch days) · point column fills from LIVE v3 days only (count started Jun 11; back-cast lines remain on station pages).</div>
 <div class="legend">RMSE scale, W/m²:
  <span><span class="sw" style="background:#2f9e44"></span>&lt;75 excellent</span>
  <span><span class="sw" style="background:#6aa84f"></span>75–120 good</span>
