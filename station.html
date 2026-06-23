@@ -212,7 +212,10 @@ fetch('data/curves/' + d + '/' + st + '.json').then(r => {
     v15tbl = '<div style="margin-top:14px"><b style="color:#9b59b6">' + v15lbl + '</b></div>' +
       '<table><thead><tr><th>JST</th><th>measured</th><th>V15</th><th>JMA MSM</th>' +
       '<th>&Delta; V15</th><th>&Delta; JMA</th></tr></thead><tbody>' + r2 + '</tbody>' + f2 + '</table>' +
-      (n5 ? '<div class="n" style="margin-top:4px">V15 closer in <b>' + w5 + '</b> of ' + n5 + ' h</div>' : '');
+      (n5 ? '<div class="n" style="margin-top:4px">V15 closer in <b>' + w5 + '</b> of ' + n5 + ' h'
+            + (j.skill_main != null ? ' &middot; skill vs JMA (&divide;clearsky, same metric as the map): <b>' + (j.skill_main >= 0 ? '+' : '') + j.skill_main + '%</b> day-ahead'
+                + (j.skill_contract != null ? ' / <b>' + (j.skill_contract >= 0 ? '+' : '') + j.skill_contract + '%</b> contract (Kenes 24&ndash;37h)' : '') : '')
+            + '</div>' : '');
   }
   const v14note = (n ? '<div class="n" style="margin-top:6px;max-width:330px">&Delta; = forecast &minus; measured ' +
          '(+ over, &minus; under) &middot; ring = closer to reality &middot; V14 closer in <b>' +
