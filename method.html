@@ -48,8 +48,10 @@
  .tgl.on { background:#1f2430; border-color:#1f2430; color:white; }
  .tgl:disabled { color:#c3cad6; background:#f3f6fa; }
  .tglrow { display:flex; gap:8px; margin:2px 0 12px; }
- .tbox { overflow-x:auto; }
- .tbox td.date, .tbox thead th:first-child { position:sticky; left:0; background:var(--paper); z-index:2; }
+ .tbox { overflow:auto; max-height:520px; overscroll-behavior:contain; }
+ .tbox td.date { position:sticky; left:0; background:var(--paper); z-index:1; }
+ .tbox thead th { position:sticky; top:0; background:var(--paper); z-index:2; box-shadow:0 1.5px 0 #e2e8f0; }
+ .tbox thead th:first-child { left:0; z-index:3; }
  @media (max-width:640px) {
    body { padding:16px 8px; } h1 { font-size:21px; }
    .chip { font-size:12px; padding:7px 10px; } .chip b { font-size:14.5px; }
