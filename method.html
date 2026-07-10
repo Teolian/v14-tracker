@@ -48,7 +48,7 @@
  .tgl.on { background:#1f2430; border-color:#1f2430; color:white; }
  .tgl:disabled { color:#c3cad6; background:#f3f6fa; }
  .tglrow { display:flex; gap:8px; margin:2px 0 12px; }
- .tbox { overflow:auto; max-height:520px; overscroll-behavior:contain; }
+ .tbox { overflow:auto; max-height:520px; }  /* НЕ contain: он запирал прокрутку страницы над таблицей — карта ниже становилась недостижимой */
  .tbox td.date { position:sticky; left:0; background:var(--paper); z-index:1; }
  .tbox thead th { position:sticky; top:0; background:var(--paper); z-index:2; box-shadow:0 1.5px 0 #e2e8f0; }
  .tbox thead th:first-child { left:0; z-index:3; }
