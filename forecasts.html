@@ -80,7 +80,7 @@
 <h1>Forecast explorer &mdash; what we issued</h1>
 <div class="sub">Pick a <b>forecast issue</b> (when we released it) and a station &mdash; the table shows that run&rsquo;s
  <b>full forecast for the next ~2 days</b> (every daylight hour from the moment of issue).
- <b style="color:#7a3fa0">V15</b> = our forecast (with its P10&ndash;P90 band); <b style="color:#4878b8">JMA</b> = JMA MSM;
+ <b style="color:#7a3fa0">V15</b> = our forecast; <b style="color:#4878b8">JMA</b> = JMA MSM;
  <b>Measured</b> = JMA pyranometer once published. W/m², hour ends at the label, all times JST.</div>
 <div id="fcsel">
  <label>Forecast issue<select id="fcis"></select></label>
@@ -119,17 +119,16 @@ function render() {
   let body = '', curDate = '';
   for (let i = 0; i < s.ts.length; i++) {
     const dpart = s.ts[i].slice(0, 5), hpart = s.ts[i].slice(6);
-    if (dpart !== curDate) { curDate = dpart; body += '<tr class="dsep"><td colspan="5">' + dpart + '</td></tr>'; }
+    if (dpart !== curDate) { curDate = dpart; body += '<tr class="dsep"><td colspan="4">' + dpart + '</td></tr>'; }
     const t = s.truth ? s.truth[i] : null;
     body += '<tr><td style="text-align:left">' + hpart + '</td>' +
       '<td class="v15c"><b>' + fmt(s.v15[i]) + '</b></td>' +
-      '<td class="bandc">' + fmt(s.p10[i]) + '&ndash;' + fmt(s.p90[i]) + '</td>' +
       '<td class="jmac">' + fmt(s.jma[i]) + '</td>' +
       '<td class="trc">' + fmt(t) + '</td></tr>';
   }
   tb.innerHTML =
     '<div class="tblwrap"><table class="fct"><thead><tr><th style="text-align:left">JST</th>' +
-    '<th class="v15c">V15</th><th>P10&ndash;P90</th><th class="jmac">JMA</th><th class="trc">Measured</th></tr></thead>' +
+    '<th class="v15c">V15</th><th class="jmac">JMA</th><th class="trc">Measured</th></tr></thead>' +
     '<tbody>' + body + '</tbody></table></div>';
   nt.innerHTML = 'Full forecast issued <b>' + CUR.run + '</b> &middot; every daylight hour up to ~48h ahead &middot; ' +
     (anyTruth ? 'Measured filled where the JMA sensor has published.' : '<b>Measured empty &mdash; these hours have not happened yet</b> (forecast on record).');
