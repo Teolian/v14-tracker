@@ -81,19 +81,23 @@
 </head><body><div class="wrap">
 <a class="back" href="index.html">&larr; back to tracker</a>
 <h1>Forecast explorer &mdash; contract komas</h1>
-<div class="sub">Each issue is the <b>daily contract freeze</b> (05:25&nbsp;JST Kenes slot &mdash; one per day). Pick a freeze and a
- station: the table is that freeze&rsquo;s committed delivery day as <b>30-min komas</b> (daylight only; night/zero komas dropped, JST).
- Our forecast is hourly &mdash; each hour fills its 2 komas (as the contract does).
+<div class="sub">Pick a <b>forecast day</b> and a station &mdash; the table is our forecast for that day as <b>30-min komas</b>
+ (daylight only; night/zero komas dropped, JST), from the daily <b>05:25&nbsp;JST contract freeze</b> (one issue per day).
+ Our forecast is hourly &mdash; each hour fills its 2 komas.
  <b style="color:#7a3fa0">V15</b> = our forecast; <b style="color:#4878b8">JMA</b> = JMA MSM;
  <b>Measured</b> = JMA pyranometer once published. W/m². <b>Sky</b> = the koma&rsquo;s weather from the clear-sky index kt
  (<b>actual</b> on finished days = measured&divide;clear-sky, else forecast = V15&divide;clear-sky): ☀️ clear (kt&nbsp;&ge;&nbsp;0.65) · ⛅ variable · ☁️ overcast · 🌧️ rain.</div>
+<div class="sub" style="background:#eef6ef;border-radius:9px;padding:9px 13px;color:#1a6b34;margin-top:-2px">
+ 🔒 These are <b>our V15 model&rsquo;s own forecasts</b>, git-committed to a public repository at the moment of issue &mdash;
+ so the numbers <b>cannot be changed after the fact</b>. Anyone can check them against reality: verify the timestamps in the
+ <a href="https://github.com/Teolian/v14-forecast/commits/main" style="color:#1a6b34;font-weight:600">public commit history</a>.</div>
 <div id="fcsel">
- <label>Contract freeze (05:25&nbsp;JST)<select id="fcis"></select></label>
+ <label>Forecast day (05:25&nbsp;JST freeze)<select id="fcis"></select></label>
  <label>Station<select id="fcst"></select></label>
 </div>
 <div id="fctbl"></div>
 <div id="fcnote"></div>
-<footer>V15 solar forecast &middot; truth = JMA pyranometers &middot; forecast log git-committed before the event &middot; auto-rebuilt daily</footer>
+<footer>V15 solar forecast &middot; truth = JMA pyranometers &middot; <a href="https://github.com/Teolian/v14-forecast/commits/main">forecast log git-committed before the event</a> &middot; auto-rebuilt daily</footer>
 </div>
 <script>
 const STATIONS = ["Abashiri", "Akita", "Aomori", "Asahikawa", "Choshi", "Fukui", "Fukuoka", "Fukushima", "Hakodate", "Hikone", "Hiroshima", "Kagoshima", "Kochi", "Kofu", "Kumamoto", "Maebashi", "Matsue", "Matsuyama", "Miyazaki", "Morioka", "Muroran", "Nagano", "Nagasaki", "Nagoya", "Nara", "Niigata", "Obihiro", "Oita", "Osaka", "Otemachi", "Saga", "Sapporo", "Sendai", "Shimonoseki", "Shizuoka", "Takamatsu", "Tateno", "Toyama", "Utsunomiya", "Wakkanai", "Yamagata"];
@@ -111,7 +115,7 @@ const pill = (d, win) => { if (d == null) return '<td class="dv">&mdash;</td>'; 
 
 fetch('data/issues/index.json').then(r => r.json()).then(list => {
   if (!list.length) { document.getElementById('fctbl').innerHTML = '<div class="n">No contract freezes on record yet.</div>'; return; }
-  list.forEach(it => { const o = document.createElement('option'); o.value = it.id; o.textContent = it.label + '  →  deliver ' + it.delivery; isSel.appendChild(o); });
+  list.forEach(it => { const o = document.createElement('option'); o.value = it.id; o.textContent = it.delivery + '  ·  issued ' + it.label; isSel.appendChild(o); });
   isSel.value = list[0].id;
   loadIssue();
 }).catch(() => { document.getElementById('fctbl').innerHTML = '<div class="n">Could not load contract freezes.</div>'; });
@@ -156,8 +160,8 @@ function render() {
     '<th class="v15c">V15</th><th class="jmac">JMA</th>' +
     '<th class="trc">Measured</th><th>&Delta; V15</th><th>&Delta; JMA</th></tr></thead><tbody>' +
     body + '</tbody>' + foot + '</table></div>';
-  nt.innerHTML = 'Contract freeze <b>' + CUR.run + '</b> &rarr; committed delivery day <b>' + CUR.delivery +
-    '</b> &middot; daylight komas (30-min) &middot; W/m² &middot; JST &middot; &Delta; = forecast &minus; measured (ring = closer). ' +
+  nt.innerHTML = 'Forecast for <b>' + CUR.delivery + '</b> &middot; issued <b>' + CUR.run +
+    '</b> (05:25 contract freeze) &middot; daylight komas (30-min) &middot; W/m² &middot; JST &middot; &Delta; = forecast &minus; measured (ring = closer). ' +
     (n ? '<b>V15 closer in ' + wv + ' of ' + n + ' komas</b> this day.'
        : '<b>Measured empty &mdash; delivery day not finished yet.</b>');
 }
