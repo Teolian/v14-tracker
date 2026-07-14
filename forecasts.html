@@ -74,20 +74,19 @@
  table.fct td.dv { text-align:center; }
  table.fct td.dv span { display:inline-block; min-width:32px; padding:2px 7px; border-radius:7px; font-weight:700; font-size:12px; }
  table.fct tfoot td { border-top:2px solid #d7dee6; font-weight:700; padding-top:7px; }
- table.fct tbody tr.night td { color:#c3cad6; }
  table.fct tbody tr:hover { background:#f6f8fa; }
  .back { font-size:13px; display:inline-block; margin-bottom:10px; }
- #fcnote { font-size:12px; color:#5b6672; margin-top:8px; max-width:700px; }
+ #fcnote { font-size:12px; color:#5b6672; margin-top:8px; max-width:720px; }
 </style>
 </head><body><div class="wrap">
 <a class="back" href="index.html">&larr; back to tracker</a>
 <h1>Forecast explorer &mdash; contract komas</h1>
 <div class="sub">Each issue is the <b>daily contract freeze</b> (05:25&nbsp;JST Kenes slot &mdash; one per day). Pick a freeze and a
- station: the table is that freeze&rsquo;s committed <b>delivery day as all 48 komas</b> (30-min blocks, JST).
- Our forecast is hourly &mdash; each hour fills its 2 komas (as the contract does); night komas are 0.
+ station: the table is that freeze&rsquo;s committed delivery day as <b>30-min komas</b> (daylight only; night/zero komas dropped, JST).
+ Our forecast is hourly &mdash; each hour fills its 2 komas (as the contract does).
  <b style="color:#7a3fa0">V15</b> = our forecast; <b style="color:#4878b8">JMA</b> = JMA MSM;
- <b>Measured</b> = JMA pyranometer once published. W/m². <b>Sky</b> = the koma&rsquo;s predicted weather from the
- clear-sky index kt (V15 &divide; clear-sky): ☀️ clear (kt&nbsp;&ge;&nbsp;0.65) · ⛅ variable · ☁️ overcast · 🌧️ rain (forecast precip).</div>
+ <b>Measured</b> = JMA pyranometer once published. W/m². <b>Sky</b> = the koma&rsquo;s weather from the clear-sky index kt
+ (<b>actual</b> on finished days = measured&divide;clear-sky, else forecast = V15&divide;clear-sky): ☀️ clear (kt&nbsp;&ge;&nbsp;0.65) · ⛅ variable · ☁️ overcast · 🌧️ rain.</div>
 <div id="fcsel">
  <label>Contract freeze (05:25&nbsp;JST)<select id="fcis"></select></label>
  <label>Station<select id="fcst"></select></label>
@@ -126,22 +125,21 @@ function render() {
   if (!CUR) return;
   const st = stSel.value, s = CUR.stations[st];
   const tb = document.getElementById('fctbl'), nt = document.getElementById('fcnote');
-  if (!s) { tb.innerHTML = '<div class="n">No forecast for ' + st + ' in this freeze.</div>'; nt.textContent = ''; return; }
-  const anyTruth = s.truth && s.truth.some(v => v !== null);
+  if (!s || !s.koma || !s.koma.length) { tb.innerHTML = '<div class="n">No forecast for ' + st + ' in this freeze.</div>'; nt.textContent = ''; return; }
+  const anyTruth = s.truth.some(v => v !== null);
   let body = '', sv = 0, sj = 0, sv2 = 0, sj2 = 0, n = 0, wv = 0;
-  for (let k = 0; k < 48; k++) {
-    const v = s.v15[k], m = s.jma[k], t = s.truth[k];
-    const night = (v === 0 && m === 0);
+  for (let i = 0; i < s.koma.length; i++) {
+    const v = s.v15[i], m = s.jma[i], t = s.truth[i];
     const dv = (t != null && v != null) ? v - t : null;
     const dj = (t != null && m != null) ? m - t : null;
     let winv = false, winj = false;
-    if (dv != null && dj != null && !night) {
+    if (dv != null && dj != null) {
       if (Math.abs(dv) <= Math.abs(dj)) { winv = true; wv++; } else winj = true;
       sv += Math.abs(dv); sj += Math.abs(dj); sv2 += dv * dv; sj2 += dj * dj; n++;
     }
-    body += '<tr' + (night ? ' class="night"' : '') + '><td class="kc">' + (k + 1) + '</td>' +
-      '<td class="kc">' + CUR.komas[k] + '</td>' +
-      '<td class="wxc">' + (s.wx && s.wx[k] ? s.wx[k] : '') + (s.kt && s.kt[k] != null ? ' ' + s.kt[k].toFixed(2) : '') + '</td>' +
+    body += '<tr><td class="kc">' + s.koma[i] + '</td>' +
+      '<td class="kc">' + s.ts[i] + '</td>' +
+      '<td class="wxc">' + (s.wx[i] || '') + (s.kt[i] != null ? ' ' + s.kt[i].toFixed(2) : '') + '</td>' +
       '<td class="v15c"><b>' + fmt(v) + '</b></td>' +
       '<td class="jmac">' + fmt(m) + '</td>' +
       '<td class="trc">' + fmt(t) + '</td>' +
@@ -159,7 +157,7 @@ function render() {
     '<th class="trc">Measured</th><th>&Delta; V15</th><th>&Delta; JMA</th></tr></thead><tbody>' +
     body + '</tbody>' + foot + '</table></div>';
   nt.innerHTML = 'Contract freeze <b>' + CUR.run + '</b> &rarr; committed delivery day <b>' + CUR.delivery +
-    '</b> &middot; 48 komas (30-min) &middot; W/m² &middot; JST &middot; &Delta; = forecast &minus; measured (ring = closer). ' +
+    '</b> &middot; daylight komas (30-min) &middot; W/m² &middot; JST &middot; &Delta; = forecast &minus; measured (ring = closer). ' +
     (n ? '<b>V15 closer in ' + wv + ' of ' + n + ' komas</b> this day.'
        : '<b>Measured empty &mdash; delivery day not finished yet.</b>');
 }
