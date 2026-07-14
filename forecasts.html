@@ -67,8 +67,9 @@
  #fctblcol { flex:1 1 380px; min-width:300px; }
  .tblwrap { overflow-x:auto; }
  table.fct { border-collapse:collapse; width:100%; font-size:13px; }
- table.fct th, table.fct td { padding:3px 10px; text-align:right; border-bottom:1px solid #eef1f4; white-space:nowrap; }
- table.fct thead th { color:#3c4654; font-weight:600; border-bottom:2px solid #d7dee6; }
+ table.fct th, table.fct td { padding:7px 11px; text-align:right; border-bottom:1px solid #eef1f4; white-space:nowrap; }
+ table.fct thead th { color:#3c4654; font-weight:600; border-bottom:2px solid #d7dee6; padding-bottom:8px; }
+ table.fct tfoot td { border-top:2px solid #d7dee6; font-weight:700; padding-top:9px; }
  table.fct td.kc, table.fct th.kc { color:#3c4654; text-align:left; }
  table.fct td.v15c, table.fct th.v15c { color:#7a3fa0; border-left:2px solid #e3e8ee; }
  table.fct td.jmac, table.fct th.jmac { color:#4878b8; }
@@ -136,8 +137,8 @@ function drawDots() {
   dotsG.innerHTML = order.map(st => {
     const xy = FCXY[st], s2 = st === sel;
     return '<g class="fcdot" data-st="' + st + '">' +
-      '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="' + (s2 ? 7 : 4.6) + '" fill="' + (s2 ? '#7a3fa0' : '#5b7fb0') + '" stroke="#fff" stroke-width="1.4"/>' +
-      '<text class="fclbl' + (show[st] ? '' : ' hid') + '" x="' + (xy[0] + 6) + '" y="' + (xy[1] + 4) + '" font-size="' + (s2 ? 13 : 10.5) + '" font-weight="' + (s2 ? 700 : 500) + '" fill="' + (s2 ? '#7a3fa0' : '#40506a') + '">' + st + '</text>' +
+      '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="' + (s2 ? 8.5 : 5.6) + '" fill="' + (s2 ? '#7a3fa0' : '#5b7fb0') + '" stroke="#fff" stroke-width="1.6"/>' +
+      '<text class="fclbl' + (show[st] ? '' : ' hid') + '" x="' + (xy[0] + 8) + '" y="' + (xy[1] + 4.5) + '" font-size="' + (s2 ? 14 : 11.5) + '" font-weight="' + (s2 ? 700 : 600) + '" paint-order="stroke" stroke="#e6eef6" stroke-width="2.8" fill="' + (s2 ? '#7a3fa0' : '#38485f') + '">' + st + '</text>' +
       '</g>';
   }).join('');
 }
@@ -186,10 +187,15 @@ function render() {
       '<td class="trc">' + fmt(t) + '</td>' +
       pill(dv, winv) + pill(dj, winj) + '</tr>';
   }
+  let foot = '';
+  if (n) foot = '<tfoot><tr><td class="kc" colspan="4" style="text-align:right">MAE</td>' +
+    pill(sv / n, sv <= sj) + pill(sj / n, sj < sv) + '</tr>' +
+    '<tr><td class="kc" colspan="4" style="text-align:right">RMSE</td>' +
+    pill(Math.sqrt(sv2 / n), sv2 <= sj2) + pill(Math.sqrt(sj2 / n), sj2 < sv2) + '</tr></tfoot>';
   tb.innerHTML =
     '<div class="tblwrap"><table class="fct"><thead><tr><th class="kc">JST</th><th class="v15c">V15</th>' +
     '<th class="jmac">JMA</th><th class="trc">Measured</th><th class="dv">&Delta; V15</th><th class="dv">&Delta; JMA</th>' +
-    '</tr></thead><tbody>' + body + '</tbody></table></div>';
+    '</tr></thead><tbody>' + body + '</tbody>' + foot + '</table></div>';
   const summ = n
     ? ' &middot; V15 RMSE <b>' + Math.round(Math.sqrt(sv2 / n)) + '</b> vs JMA <b>' + Math.round(Math.sqrt(sj2 / n)) + '</b> &middot; <b>V15 closer in ' + wv + '/' + n + ' h</b>'
     : ' &middot; <b>not finished yet &mdash; no measured</b>';
