@@ -67,9 +67,13 @@
  table.fct th, table.fct td { padding:3px 13px; text-align:right; border-bottom:1px solid #eef1f4; white-space:nowrap; }
  table.fct thead th { color:#3c4654; font-weight:600; border-bottom:2px solid #d7dee6; position:sticky; top:0; background:#fff; }
  table.fct td.kc { color:#8a909c; text-align:left; }
+ table.fct td.wxc, table.fct th.wxc { text-align:left; white-space:nowrap; color:#5b6672; }
  table.fct td.v15c, table.fct th.v15c { color:#7a3fa0; border-left:2px solid #e3e8ee; }
  table.fct td.jmac, table.fct th.jmac { color:#4878b8; border-left:2px solid #e3e8ee; }
  table.fct td.trc, table.fct th.trc { color:#1f2430; font-weight:600; border-left:2px solid #e3e8ee; }
+ table.fct td.dv { text-align:center; }
+ table.fct td.dv span { display:inline-block; min-width:32px; padding:2px 7px; border-radius:7px; font-weight:700; font-size:12px; }
+ table.fct tfoot td { border-top:2px solid #d7dee6; font-weight:700; padding-top:7px; }
  table.fct tbody tr.night td { color:#c3cad6; }
  table.fct tbody tr:hover { background:#f6f8fa; }
  .back { font-size:13px; display:inline-block; margin-bottom:10px; }
@@ -82,7 +86,8 @@
  station: the table is that freeze&rsquo;s committed <b>delivery day as all 48 komas</b> (30-min blocks, JST).
  Our forecast is hourly &mdash; each hour fills its 2 komas (as the contract does); night komas are 0.
  <b style="color:#7a3fa0">V15</b> = our forecast; <b style="color:#4878b8">JMA</b> = JMA MSM;
- <b>Measured</b> = JMA pyranometer once published. W/m².</div>
+ <b>Measured</b> = JMA pyranometer once published. W/m². <b>Sky</b> = the koma&rsquo;s predicted weather from the
+ clear-sky index kt (V15 &divide; clear-sky): ☀️ clear (kt&nbsp;&ge;&nbsp;0.65) · ⛅ variable · ☁️ overcast · 🌧️ rain (forecast precip).</div>
 <div id="fcsel">
  <label>Contract freeze (05:25&nbsp;JST)<select id="fcis"></select></label>
  <label>Station<select id="fcst"></select></label>
@@ -98,6 +103,12 @@ STATIONS.forEach(s => { const o = document.createElement('option'); o.value = o.
 stSel.value = STATIONS.includes('Otemachi') ? 'Otemachi' : STATIONS[0];
 let CUR = null;
 const fmt = v => (v == null ? '&mdash;' : Math.round(v));
+const ESTOPS = [[30, '#1a9850'], [75, '#66bd63'], [110, '#d9ef8b'], [140, '#fee08b'], [180, '#f46d43'], [250, '#d73027']];
+const hx = c => c.slice(1).match(/../g).map(x => parseInt(x, 16));
+const mixc = (a, b, t) => { const A = hx(a), B = hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+const colErr = v => { if (v <= ESTOPS[0][0]) return ESTOPS[0][1]; for (let i = 1; i < ESTOPS.length; i++) if (v <= ESTOPS[i][0]) return mixc(ESTOPS[i - 1][1], ESTOPS[i][1], (v - ESTOPS[i - 1][0]) / (ESTOPS[i][0] - ESTOPS[i - 1][0])); return ESTOPS[ESTOPS.length - 1][1]; };
+const tcol = c => { const [r, g, b] = hx(c); return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? '#1f2430' : '#fff'; };
+const pill = (d, win) => { if (d == null) return '<td class="dv">&mdash;</td>'; const bg = colErr(Math.abs(d)); return '<td class="dv"><span style="background:' + bg + ';color:' + tcol(bg) + (win ? ';box-shadow:0 0 0 2px #1f2430' : '') + '">' + (d > 0 ? '+' : '') + Math.round(d) + '</span></td>'; };
 
 fetch('data/issues/index.json').then(r => r.json()).then(list => {
   if (!list.length) { document.getElementById('fctbl').innerHTML = '<div class="n">No contract freezes on record yet.</div>'; return; }
@@ -117,22 +128,40 @@ function render() {
   const tb = document.getElementById('fctbl'), nt = document.getElementById('fcnote');
   if (!s) { tb.innerHTML = '<div class="n">No forecast for ' + st + ' in this freeze.</div>'; nt.textContent = ''; return; }
   const anyTruth = s.truth && s.truth.some(v => v !== null);
-  let body = '';
+  let body = '', sv = 0, sj = 0, sv2 = 0, sj2 = 0, n = 0, wv = 0;
   for (let k = 0; k < 48; k++) {
-    const day = (s.v15[k] === 0 && s.jma[k] === 0);
-    body += '<tr' + (day ? ' class="night"' : '') + '><td class="kc">' + (k + 1) + '</td>' +
+    const v = s.v15[k], m = s.jma[k], t = s.truth[k];
+    const night = (v === 0 && m === 0);
+    const dv = (t != null && v != null) ? v - t : null;
+    const dj = (t != null && m != null) ? m - t : null;
+    let winv = false, winj = false;
+    if (dv != null && dj != null && !night) {
+      if (Math.abs(dv) <= Math.abs(dj)) { winv = true; wv++; } else winj = true;
+      sv += Math.abs(dv); sj += Math.abs(dj); sv2 += dv * dv; sj2 += dj * dj; n++;
+    }
+    body += '<tr' + (night ? ' class="night"' : '') + '><td class="kc">' + (k + 1) + '</td>' +
       '<td class="kc">' + CUR.komas[k] + '</td>' +
-      '<td class="v15c"><b>' + fmt(s.v15[k]) + '</b></td>' +
-      '<td class="jmac">' + fmt(s.jma[k]) + '</td>' +
-      '<td class="trc">' + fmt(s.truth[k]) + '</td></tr>';
+      '<td class="wxc">' + (s.wx && s.wx[k] ? s.wx[k] : '') + (s.kt && s.kt[k] != null ? ' ' + s.kt[k].toFixed(2) : '') + '</td>' +
+      '<td class="v15c"><b>' + fmt(v) + '</b></td>' +
+      '<td class="jmac">' + fmt(m) + '</td>' +
+      '<td class="trc">' + fmt(t) + '</td>' +
+      pill(dv, winv) + pill(dj, winj) + '</tr>';
   }
+  let foot = '';
+  if (n) foot = '<tfoot><tr><td colspan="6" style="text-align:right">MAE</td>' +
+    pill(sv / n, sv <= sj) + pill(sj / n, sj < sv) + '</tr>' +
+    '<tr><td colspan="6" style="text-align:right">RMSE</td>' +
+    pill(Math.sqrt(sv2 / n), sv2 <= sj2) + pill(Math.sqrt(sj2 / n), sj2 < sv2) + '</tr></tfoot>';
   tb.innerHTML =
     '<div class="tblwrap"><table class="fct"><thead><tr><th class="kc" style="text-align:left">Koma</th>' +
-    '<th class="kc" style="text-align:left">JST</th><th class="v15c">V15</th><th class="jmac">JMA</th>' +
-    '<th class="trc">Measured</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+    '<th class="kc" style="text-align:left">JST</th><th class="wxc" style="text-align:left">Sky (kt)</th>' +
+    '<th class="v15c">V15</th><th class="jmac">JMA</th>' +
+    '<th class="trc">Measured</th><th>&Delta; V15</th><th>&Delta; JMA</th></tr></thead><tbody>' +
+    body + '</tbody>' + foot + '</table></div>';
   nt.innerHTML = 'Contract freeze <b>' + CUR.run + '</b> &rarr; committed delivery day <b>' + CUR.delivery +
-    '</b> &middot; 48 komas (30-min), hourly forecast filling its 2 komas &middot; W/m² &middot; JST &middot; ' +
-    (anyTruth ? 'Measured filled where the JMA sensor has published.' : '<b>Measured empty &mdash; delivery day not finished yet.</b>');
+    '</b> &middot; 48 komas (30-min) &middot; W/m² &middot; JST &middot; &Delta; = forecast &minus; measured (ring = closer). ' +
+    (n ? '<b>V15 closer in ' + wv + ' of ' + n + ' komas</b> this day.'
+       : '<b>Measured empty &mdash; delivery day not finished yet.</b>');
 }
 
 stSel.onchange = render; isSel.onchange = loadIssue;
