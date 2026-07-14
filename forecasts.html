@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Forecast explorer — what we issued</title><style>
+<title>Forecast explorer — contract komas</title><style>
  :root { --ink:#1f2430; --muted:#7a8494; --paper:#fcfdff; --panel:#f3f6fa; }
  body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--paper);
         color:var(--ink); margin:0; padding:28px 16px; }
@@ -64,26 +64,27 @@
  #fcsel select { font-size:15px; padding:7px 11px; border:1px solid #cfd9e4; border-radius:9px; background:#fff; min-width:200px; }
  .tblwrap { overflow-x:auto; }
  table.fct { border-collapse:collapse; margin:0 auto; font-size:13px; }
- table.fct th, table.fct td { padding:4px 13px; text-align:right; border-bottom:1px solid #eef1f4; white-space:nowrap; }
+ table.fct th, table.fct td { padding:3px 13px; text-align:right; border-bottom:1px solid #eef1f4; white-space:nowrap; }
  table.fct thead th { color:#3c4654; font-weight:600; border-bottom:2px solid #d7dee6; position:sticky; top:0; background:#fff; }
+ table.fct td.kc { color:#8a909c; text-align:left; }
  table.fct td.v15c, table.fct th.v15c { color:#7a3fa0; border-left:2px solid #e3e8ee; }
- table.fct td.bandc { color:#9b8bb0; font-size:12px; }
  table.fct td.jmac, table.fct th.jmac { color:#4878b8; border-left:2px solid #e3e8ee; }
  table.fct td.trc, table.fct th.trc { color:#1f2430; font-weight:600; border-left:2px solid #e3e8ee; }
- table.fct tr.dsep td { background:#eef1f4; font-weight:700; text-align:left; color:#1f2430; }
- table.fct tbody tr:hover:not(.dsep) { background:#f6f8fa; }
+ table.fct tbody tr.night td { color:#c3cad6; }
+ table.fct tbody tr:hover { background:#f6f8fa; }
  .back { font-size:13px; display:inline-block; margin-bottom:10px; }
- #fcnote { font-size:12px; color:#5b6672; margin-top:8px; max-width:680px; }
+ #fcnote { font-size:12px; color:#5b6672; margin-top:8px; max-width:700px; }
 </style>
 </head><body><div class="wrap">
 <a class="back" href="index.html">&larr; back to tracker</a>
-<h1>Forecast explorer &mdash; what we issued</h1>
-<div class="sub">Pick a <b>forecast issue</b> (when we released it) and a station &mdash; the table shows that run&rsquo;s
- <b>full forecast for the next ~2 days</b> (every daylight hour from the moment of issue).
+<h1>Forecast explorer &mdash; contract komas</h1>
+<div class="sub">Each issue is the <b>daily contract freeze</b> (05:25&nbsp;JST Kenes slot &mdash; one per day). Pick a freeze and a
+ station: the table is that freeze&rsquo;s committed <b>delivery day as all 48 komas</b> (30-min blocks, JST).
+ Our forecast is hourly &mdash; each hour fills its 2 komas (as the contract does); night komas are 0.
  <b style="color:#7a3fa0">V15</b> = our forecast; <b style="color:#4878b8">JMA</b> = JMA MSM;
- <b>Measured</b> = JMA pyranometer once published. W/m², hour ends at the label, all times JST.</div>
+ <b>Measured</b> = JMA pyranometer once published. W/m².</div>
 <div id="fcsel">
- <label>Forecast issue<select id="fcis"></select></label>
+ <label>Contract freeze (05:25&nbsp;JST)<select id="fcis"></select></label>
  <label>Station<select id="fcst"></select></label>
 </div>
 <div id="fctbl"></div>
@@ -99,39 +100,39 @@ let CUR = null;
 const fmt = v => (v == null ? '&mdash;' : Math.round(v));
 
 fetch('data/issues/index.json').then(r => r.json()).then(list => {
-  if (!list.length) { document.getElementById('fctbl').innerHTML = '<div class="n">No forecast issues on record yet.</div>'; return; }
-  list.forEach(it => { const o = document.createElement('option'); o.value = it.id; o.textContent = 'issued ' + it.label; isSel.appendChild(o); });
+  if (!list.length) { document.getElementById('fctbl').innerHTML = '<div class="n">No contract freezes on record yet.</div>'; return; }
+  list.forEach(it => { const o = document.createElement('option'); o.value = it.id; o.textContent = it.label + '  →  deliver ' + it.delivery; isSel.appendChild(o); });
   isSel.value = list[0].id;
   loadIssue();
-}).catch(() => { document.getElementById('fctbl').innerHTML = '<div class="n">Could not load forecast issues.</div>'; });
+}).catch(() => { document.getElementById('fctbl').innerHTML = '<div class="n">Could not load contract freezes.</div>'; });
 
 function loadIssue() {
   fetch('data/issues/' + isSel.value + '.json').then(r => r.json()).then(j => { CUR = j; render(); })
-    .catch(() => { document.getElementById('fctbl').innerHTML = '<div class="n">Could not load this issue.</div>'; });
+    .catch(() => { document.getElementById('fctbl').innerHTML = '<div class="n">Could not load this freeze.</div>'; });
 }
 
 function render() {
   if (!CUR) return;
   const st = stSel.value, s = CUR.stations[st];
   const tb = document.getElementById('fctbl'), nt = document.getElementById('fcnote');
-  if (!s || !s.ts || !s.ts.length) { tb.innerHTML = '<div class="n">No forecast for ' + st + ' in this issue.</div>'; nt.textContent = ''; return; }
+  if (!s) { tb.innerHTML = '<div class="n">No forecast for ' + st + ' in this freeze.</div>'; nt.textContent = ''; return; }
   const anyTruth = s.truth && s.truth.some(v => v !== null);
-  let body = '', curDate = '';
-  for (let i = 0; i < s.ts.length; i++) {
-    const dpart = s.ts[i].slice(0, 5), hpart = s.ts[i].slice(6);
-    if (dpart !== curDate) { curDate = dpart; body += '<tr class="dsep"><td colspan="4">' + dpart + '</td></tr>'; }
-    const t = s.truth ? s.truth[i] : null;
-    body += '<tr><td style="text-align:left">' + hpart + '</td>' +
-      '<td class="v15c"><b>' + fmt(s.v15[i]) + '</b></td>' +
-      '<td class="jmac">' + fmt(s.jma[i]) + '</td>' +
-      '<td class="trc">' + fmt(t) + '</td></tr>';
+  let body = '';
+  for (let k = 0; k < 48; k++) {
+    const day = (s.v15[k] === 0 && s.jma[k] === 0);
+    body += '<tr' + (day ? ' class="night"' : '') + '><td class="kc">' + (k + 1) + '</td>' +
+      '<td class="kc">' + CUR.komas[k] + '</td>' +
+      '<td class="v15c"><b>' + fmt(s.v15[k]) + '</b></td>' +
+      '<td class="jmac">' + fmt(s.jma[k]) + '</td>' +
+      '<td class="trc">' + fmt(s.truth[k]) + '</td></tr>';
   }
   tb.innerHTML =
-    '<div class="tblwrap"><table class="fct"><thead><tr><th style="text-align:left">JST</th>' +
-    '<th class="v15c">V15</th><th class="jmac">JMA</th><th class="trc">Measured</th></tr></thead>' +
-    '<tbody>' + body + '</tbody></table></div>';
-  nt.innerHTML = 'Full forecast issued <b>' + CUR.run + '</b> &middot; every daylight hour up to ~48h ahead &middot; ' +
-    (anyTruth ? 'Measured filled where the JMA sensor has published.' : '<b>Measured empty &mdash; these hours have not happened yet</b> (forecast on record).');
+    '<div class="tblwrap"><table class="fct"><thead><tr><th class="kc" style="text-align:left">Koma</th>' +
+    '<th class="kc" style="text-align:left">JST</th><th class="v15c">V15</th><th class="jmac">JMA</th>' +
+    '<th class="trc">Measured</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+  nt.innerHTML = 'Contract freeze <b>' + CUR.run + '</b> &rarr; committed delivery day <b>' + CUR.delivery +
+    '</b> &middot; 48 komas (30-min), hourly forecast filling its 2 komas &middot; W/m² &middot; JST &middot; ' +
+    (anyTruth ? 'Measured filled where the JMA sensor has published.' : '<b>Measured empty &mdash; delivery day not finished yet.</b>');
 }
 
 stSel.onchange = render; isSel.onchange = loadIssue;
