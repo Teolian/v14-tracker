@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Forecast explorer — V15 vs JMA</title><style>
+<title>Forecast explorer — what we issued</title><style>
  :root { --ink:#1f2430; --muted:#7a8494; --paper:#fcfdff; --panel:#f3f6fa; }
  body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--paper);
         color:var(--ink); margin:0; padding:28px 16px; }
@@ -59,104 +59,127 @@
    .val { min-width:38px; padding:5px 8px; font-size:14px; }
  }
 
- #fcsel { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; justify-content:center; margin:8px 0 6px; }
- #fcsel label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:4px; text-align:left; }
- #fcsel select { font-size:15px; padding:7px 11px; border:1px solid #cfd9e4; border-radius:9px; background:#fff; min-width:160px; }
- #fcopt { display:flex; gap:14px; justify-content:center; align-items:center; font-size:13px; color:#3c4654; margin:2px 0 12px; }
+ #fcsel { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; margin:8px 0 12px; }
+ #fcsel label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
+ #fcsel select { font-size:15px; padding:7px 11px; border:1px solid #cfd9e4; border-radius:9px; background:#fff; min-width:170px; }
+ .tblwrap { overflow-x:auto; }
+ table.fct { border-collapse:collapse; margin:0 auto; font-size:13px; }
+ table.fct th, table.fct td { padding:4px 9px; text-align:right; border-bottom:1px solid #eef1f4; white-space:nowrap; }
+ table.fct thead th { color:#3c4654; font-weight:600; border-bottom:1px solid #d7dee6; }
+ table.fct th.dayh { text-align:center; border-left:2px solid #e3e8ee; background:#f7f9fb; font-size:12px; }
+ table.fct td.v15c, table.fct th.v15c { border-left:2px solid #e3e8ee; color:#7a3fa0; }
+ table.fct td.jmac, table.fct th.jmac { color:#4878b8; }
+ table.fct tbody tr:hover { background:#f6f8fa; }
+ #fcopt { display:flex; gap:14px; align-items:center; font-size:13px; color:#3c4654; margin:6px 0 10px; flex-wrap:wrap; }
  #fcopt label { cursor:pointer; }
- #fc-chart { max-width:920px; margin:0 auto; }
+ #fc-chart { max-width:820px; }
  .back { font-size:13px; display:inline-block; margin-bottom:10px; }
- #fckenes { font-size:12.5px; color:#5b4a6b; text-align:center; margin:8px auto 0; max-width:640px; }
+ h3.fch { margin:22px 0 2px; font-size:16px; }
+ #fckenes { font-size:12px; color:#5b4a6b; margin:6px 0 0; max-width:660px; }
 </style>
 <script src="chart.umd.min.js"></script>
 </head><body><div class="wrap">
 <a class="back" href="index.html">&larr; back to tracker</a>
-<h1>Forecast explorer &mdash; V15 vs JMA MSM</h1>
-<div class="sub">Pick a station and a date. <b style="color:#9b59b6">Purple</b> = our V15 forecast with its P10&ndash;P90 band;
- <b style="color:#4878b8">dashed blue</b> = JMA MSM (the market reference); <b>black</b> = measured (when JMA
- publishes it, ~00:50&nbsp;JST). All hours are JST. The <b style="color:#c8781e">orange span</b> marks the
- <b>Kenes contract slot</b> &mdash; the hours committed at 05:25&nbsp;JST the day before.</div>
-<div id="fcsel">
- <label>Station<select id="fcst"></select></label>
- <label>Date<select id="fcd"></select></label>
-</div>
+<h1>Forecast explorer &mdash; what we issued</h1>
+<div class="sub">The forecast we actually released for the next days. <b style="color:#7a3fa0">V15</b> = our forecast
+ (W/m², the hour ends at the label, all times JST); <b style="color:#4878b8">JMA</b> = JMA MSM beside it for
+ reference. Pick a station. The small chart below shows one day with its P10&ndash;P90 band and the Kenes slot.</div>
+<div id="fcsel"><label>Station<select id="fcst"></select></label></div>
+<div id="fctbl"></div>
+<h3 class="fch">Detail chart</h3>
 <div id="fcopt">
- <label><input type="checkbox" id="fcband" checked> P10&ndash;P90 band (our edge &mdash; JMA has none)</label>
- <label><input type="checkbox" id="fcken" checked> highlight Kenes slot</label>
+ <label>Day<select id="fccd" style="font-size:13px;padding:4px 8px;border:1px solid #cfd9e4;border-radius:8px;margin-left:5px"></select></label>
+ <label><input type="checkbox" id="fcband" checked> P10&ndash;P90 band</label>
+ <label><input type="checkbox" id="fcken" checked> Kenes slot</label>
 </div>
-<div id="fcsub" class="sub" style="text-align:center"></div>
-<div id="fc-chart"><canvas id="fch" height="150"></canvas></div>
+<div id="fc-chart"><canvas id="fch" height="110"></canvas></div>
 <div id="fckenes"></div>
 <footer>V15 solar forecast &middot; truth = JMA pyranometers &middot; forecast log git-committed before the event &middot; auto-rebuilt daily</footer>
 </div>
 <script>
 const DATES = ["2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12", "2026-06-13", "2026-06-14", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19", "2026-06-20", "2026-06-21", "2026-06-22", "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28", "2026-06-29", "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-03", "2026-07-04", "2026-07-05", "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-11", "2026-07-12", "2026-07-13", "2026-07-14", "2026-07-15"], STATIONS = ["Abashiri", "Akita", "Aomori", "Asahikawa", "Choshi", "Fukui", "Fukuoka", "Fukushima", "Hakodate", "Hikone", "Hiroshima", "Kagoshima", "Kochi", "Kofu", "Kumamoto", "Maebashi", "Matsue", "Matsuyama", "Miyazaki", "Morioka", "Muroran", "Nagano", "Nagasaki", "Nagoya", "Nara", "Niigata", "Obihiro", "Oita", "Osaka", "Otemachi", "Saga", "Sapporo", "Sendai", "Shimonoseki", "Shizuoka", "Takamatsu", "Tateno", "Toyama", "Utsunomiya", "Wakkanai", "Yamagata"];
-let chart = null;
-const stSel = document.getElementById('fcst'), dSel = document.getElementById('fcd');
+const stSel = document.getElementById('fcst'), cdSel = document.getElementById('fccd');
 const bandCk = document.getElementById('fcband'), kenCk = document.getElementById('fcken');
 STATIONS.forEach(s => { const o = document.createElement('option'); o.value = o.textContent = s; stSel.appendChild(o); });
-DATES.forEach(d => { const o = document.createElement('option'); o.value = o.textContent = d; dSel.appendChild(o); });
 stSel.value = STATIONS.includes('Otemachi') ? 'Otemachi' : STATIONS[0];
-dSel.value = DATES.includes('2026-07-15') ? '2026-07-15' : DATES[DATES.length - 1];
+const todayStr = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+let fdays = DATES.filter(d => d >= todayStr).slice(0, 3);
+if (fdays.length < 2) fdays = DATES.slice(-3);
+fdays.forEach(d => { const o = document.createElement('option'); o.value = o.textContent = d; cdSel.appendChild(o); });
+cdSel.value = fdays[fdays.length - 1];
+const store = {};
+let chart = null;
+const fmt = v => (v == null ? '&mdash;' : Math.round(v));
 
-const kenesPlugin = {
-  id: 'kenes',
+function loadAll() {
+  const st = stSel.value;
+  Promise.all(fdays.map(d => fetch('data/curves/' + d + '/' + st + '.json').then(r => r.ok ? r.json() : null).catch(() => null)))
+    .then(res => { fdays.forEach((d, i) => store[d] = res[i]); buildTable(); renderChart(); });
+}
+
+function buildTable() {
+  const hset = new Set();
+  fdays.forEach(d => { const j = store[d]; if (j && j.hours) j.hours.forEach(h => hset.add(h)); });
+  const hours = Array.from(hset).sort();
+  if (!hours.length) { document.getElementById('fctbl').innerHTML = '<div class="n">No forecast on record for this station in the next days.</div>'; return; }
+  let h1 = '<tr><th rowspan="2" style="text-align:left">JST</th>', h2 = '<tr>';
+  fdays.forEach(d => { const j = store[d];
+    const iss = (j && j.issued) ? ' &middot; iss ' + j.issued.split(' ')[1] : '';
+    h1 += '<th colspan="2" class="dayh">' + d + iss + '</th>';
+    h2 += '<th class="v15c">V15</th><th class="jmac">JMA</th>'; });
+  h1 += '</tr>'; h2 += '</tr>';
+  let body = '';
+  hours.forEach(hh => {
+    let r = '<tr><td style="text-align:left">' + hh + '</td>';
+    fdays.forEach(d => { const j = store[d]; let v = null, m = null;
+      if (j && j.hours) { const i = j.hours.indexOf(hh); if (i >= 0) { v = j.v15 ? j.v15[i] : null; m = j.jma ? j.jma[i] : null; } }
+      r += '<td class="v15c"><b>' + fmt(v) + '</b></td><td class="jmac">' + fmt(m) + '</td>'; });
+    r += '</tr>'; body += r;
+  });
+  document.getElementById('fctbl').innerHTML =
+    '<div class="tblwrap"><table class="fct"><thead>' + h1 + h2 + '</thead><tbody>' + body + '</tbody></table></div>' +
+    '<div class="n" style="margin-top:6px;max-width:660px">V15 = our issued forecast &middot; JMA = JMA MSM (reference) &middot; W/m² &middot; hour ends at the label &middot; JST &middot; &mdash; = outside daylight or not on record.</div>';
+}
+
+const kenesPlugin = { id: 'kenes',
   beforeDatasetsDraw(c, args, opts) {
-    if (!opts.on) return;
-    const hrs = opts.hours; if (!hrs || !hrs.length) return;
-    const labels = c.data.labels;
-    const idx = hrs.map(h => labels.indexOf(h)).filter(i => i >= 0);
+    if (!opts.on) return; const hrs = opts.hours; if (!hrs || !hrs.length) return;
+    const labels = c.data.labels; const idx = hrs.map(h => labels.indexOf(h)).filter(i => i >= 0);
     if (!idx.length) return;
     const x = c.scales.x, top = c.chartArea.top, bot = c.chartArea.bottom;
-    const x0 = x.getPixelForValue(Math.min.apply(null, idx));
-    const x1 = x.getPixelForValue(Math.max.apply(null, idx));
-    const ctx = c.ctx; ctx.save();
-    ctx.fillStyle = 'rgba(200,120,30,0.13)';
-    ctx.fillRect(Math.min(x0, x1), top, Math.abs(x1 - x0), bot - top);
-    ctx.restore();
-  }
-};
+    const x0 = x.getPixelForValue(Math.min.apply(null, idx)), x1 = x.getPixelForValue(Math.max.apply(null, idx));
+    const ctx = c.ctx; ctx.save(); ctx.fillStyle = 'rgba(200,120,30,0.13)';
+    ctx.fillRect(Math.min(x0, x1), top, Math.abs(x1 - x0), bot - top); ctx.restore();
+  } };
 
-function render() {
-  const st = stSel.value, d = dSel.value;
-  fetch('data/curves/' + d + '/' + st + '.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => {
-    const hasTruth = j.truth && j.truth.some(v => v !== null);
-    const hasBand = bandCk.checked && j.v15_p10 && j.v15_p10.some(v => v !== null);
-    const hasV15 = j.v15 && j.v15.some(v => v !== null);
-    document.getElementById('fcsub').innerHTML = 'forecast issued <b>' + j.issued + '</b>' +
-      (j.committed_before_day ? '' : ' <b>(warm-up run)</b>') +
-      (hasTruth ? '' : ' &middot; <b>truth not published yet &mdash; forecast on record</b>') +
-      (j.skill_main != null ? ' &middot; skill vs JMA <b>' + (j.skill_main >= 0 ? '+' : '') + j.skill_main + '%</b>' : '');
-    const ds = [];
-    if (hasBand) ds.push(
-      {label: 'V15 P10', data: j.v15_p10, borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(155,89,182,0.13)'},
-      {label: 'V15 P90', data: j.v15_p90, borderWidth: 0, pointRadius: 0, fill: false});
-    if (hasV15) ds.push({label: 'V15', data: j.v15, borderColor: '#9b59b6', borderWidth: 2.4,
-      pointRadius: 2, pointBackgroundColor: '#9b59b6', tension: .35});
-    ds.push({label: 'JMA MSM', data: j.jma, borderColor: '#4878b8', borderWidth: 1.8,
-      borderDash: [6, 4], pointRadius: 0, tension: .35});
-    if (hasTruth) ds.push({label: 'Measured', data: j.truth, borderColor: '#1f2430', borderWidth: 2.4,
-      pointRadius: 2.5, pointBackgroundColor: '#1f2430', tension: .35});
-    const kh = (j.c_hours && j.c_hours.length) ? j.c_hours : [];
-    if (chart) chart.destroy();
-    chart = new Chart(document.getElementById('fch'), {
-      type: 'line', data: {labels: j.hours, datasets: ds},
-      options: {animation: false, maintainAspectRatio: true, aspectRatio: 1.9,
-        interaction: {mode: 'index', intersect: false},
-        plugins: {legend: {labels: {filter: i => !['V15 P10', 'V15 P90'].includes(i.text)}},
-          kenes: {hours: kh, on: kenCk.checked}},
-        scales: {y: {title: {display: true, text: 'W/m²'}, beginAtZero: true}, x: {ticks: {maxTicksLimit: 9}}}},
-      plugins: [kenesPlugin]});
-    document.getElementById('fckenes').innerHTML = (kh.length && kenCk.checked) ?
-      'Orange span = <b>Kenes contract slot</b> (' + kh[0] + '&ndash;' + kh[kh.length - 1] +
-      ' JST) &mdash; committed 05:25&nbsp;JST the day before (~24&ndash;37&thinsp;h horizon).' :
-      (kh.length ? '' : 'No Kenes contract slot on record for this day yet.');
-  }).catch(() => {
-    if (chart) { chart.destroy(); chart = null; }
-    document.getElementById('fcsub').innerHTML = 'No forecast curve on record for <b>' + st + '</b> / <b>' + d + '</b> &mdash; outside the tracked window.';
-    document.getElementById('fckenes').textContent = '';
-  });
+function renderChart() {
+  const d = cdSel.value, j = store[d];
+  if (chart) { chart.destroy(); chart = null; }
+  const kbox = document.getElementById('fckenes');
+  if (!j || !j.hours) { kbox.textContent = 'No curve for ' + d + '.'; return; }
+  const hasTruth = j.truth && j.truth.some(v => v !== null);
+  const hasBand = bandCk.checked && j.v15_p10 && j.v15_p10.some(v => v !== null);
+  const hasV15 = j.v15 && j.v15.some(v => v !== null);
+  const ds = [];
+  if (hasBand) ds.push(
+    {label: 'V15 P10', data: j.v15_p10, borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(155,89,182,0.13)'},
+    {label: 'V15 P90', data: j.v15_p90, borderWidth: 0, pointRadius: 0, fill: false});
+  if (hasV15) ds.push({label: 'V15', data: j.v15, borderColor: '#9b59b6', borderWidth: 2.2, pointRadius: 1.6, pointBackgroundColor: '#9b59b6', tension: .35});
+  ds.push({label: 'JMA MSM', data: j.jma, borderColor: '#4878b8', borderWidth: 1.7, borderDash: [6, 4], pointRadius: 0, tension: .35});
+  if (hasTruth) ds.push({label: 'Measured', data: j.truth, borderColor: '#1f2430', borderWidth: 2.2, pointRadius: 2, pointBackgroundColor: '#1f2430', tension: .35});
+  const kh = (j.c_hours && j.c_hours.length) ? j.c_hours : [];
+  chart = new Chart(document.getElementById('fch'), {
+    type: 'line', data: {labels: j.hours, datasets: ds},
+    options: {animation: false, maintainAspectRatio: true, aspectRatio: 2.4,
+      interaction: {mode: 'index', intersect: false},
+      plugins: {legend: {labels: {filter: i => !['V15 P10', 'V15 P90'].includes(i.text)}}, kenes: {hours: kh, on: kenCk.checked}},
+      scales: {y: {title: {display: true, text: 'W/m²'}, beginAtZero: true}, x: {ticks: {maxTicksLimit: 9}}}},
+    plugins: [kenesPlugin]});
+  kbox.innerHTML = 'forecast issued <b>' + (j.issued || '') + '</b>' + (hasTruth ? '' : ' &middot; truth not published yet') +
+    ((kh.length && kenCk.checked) ? ' &middot; <b style="color:#c8781e">orange</b> = Kenes contract slot (' + kh[0] + '&ndash;' + kh[kh.length - 1] + ' JST, frozen 05:25 the day before)' : '');
 }
-[stSel, dSel, bandCk, kenCk].forEach(el => el.onchange = render);
-render();
+
+stSel.onchange = loadAll;
+cdSel.onchange = renderChart; bandCk.onchange = renderChart; kenCk.onchange = renderChart;
+loadAll();
 </script></body></html>
