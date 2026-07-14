@@ -187,13 +187,16 @@ function render() {
       '<td class="trc">' + fmt(t) + '</td>' +
       pill(dv, winv) + pill(dj, winj) + '</tr>';
   }
-  let foot = '';
-  if (n) foot = '<tfoot><tr><td class="kc" colspan="4" style="text-align:right">MAE</td>' +
+  let foot;
+  if (n) foot = '<tfoot><tr><td class="kc" colspan="4" style="text-align:right">MAE (day avg)</td>' +
     pill(sv / n, sv <= sj) + pill(sj / n, sj < sv) + '</tr>' +
-    '<tr><td class="kc" colspan="4" style="text-align:right">RMSE</td>' +
+    '<tr><td class="kc" colspan="4" style="text-align:right">RMSE (day avg)</td>' +
     pill(Math.sqrt(sv2 / n), sv2 <= sj2) + pill(Math.sqrt(sj2 / n), sj2 < sv2) + '</tr></tfoot>';
+  else foot = '<tfoot><tr><td colspan="6" style="text-align:center;color:#8a909c;font-weight:400;padding-top:10px">MAE / RMSE (day average) appear once the day is measured &mdash; JMA publishes ~00:50 JST next day</td></tr></tfoot>';
   tb.innerHTML =
-    '<div class="tblwrap"><table class="fct"><thead><tr><th class="kc">JST</th><th class="v15c">V15</th>' +
+    '<div class="tblwrap"><table class="fct" style="table-layout:fixed">' +
+    '<colgroup><col style="width:19%"><col style="width:14%"><col style="width:14%"><col style="width:18%"><col style="width:17.5%"><col style="width:17.5%"></colgroup>' +
+    '<thead><tr><th class="kc">JST</th><th class="v15c">V15</th>' +
     '<th class="jmac">JMA</th><th class="trc">Measured</th><th class="dv">&Delta; V15</th><th class="dv">&Delta; JMA</th>' +
     '</tr></thead><tbody>' + body + '</tbody>' + foot + '</table></div>';
   const summ = n
